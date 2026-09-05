@@ -332,7 +332,10 @@ src/client/features/search-tabs/types.ts        EDIT struck: see "Resolved durin
 plugins/openseo/skills/youtube-research/        GEN  via pnpm sync-plugin-skills (exists)
 scripts/sync-plugin-skills.mjs                  EDIT add "youtube-research" to the list (done)
 
-scripts/youtube-volume-calibration.ts           NEW  fits estimator constants from a VidIQ sample CSV
+scripts/youtube-volume-calibration.ts           NEW  gathers Google Ads anchors and Trends interest for a VidIQ CSV, prints proposed constants (exists)
+src/shared/youtube-calibration.ts               NEW  pure fit: implied shares, bounds, benchmark volume, median ratio, Spearman (exists)
+src/shared/youtube-calibration.test.ts          NEW  (exists)
+docs/seoforge/YOUTUBE_DATA_API.md               NEW  self-hosting note for the optional Data API key (exists)
 
 e2e/fixtures/youtube-research-fixtures.ts       NEW  (exists)
 e2e/youtube-research.spec.ts                    NEW  (exists)
@@ -825,8 +828,10 @@ Then:
    Compilation errors inside `youtube` folders mean an upstream helper we import changed; fix our call sites.
 4. Run `pnpm test`, `pnpm ci:check`.
 5. Run `pnpm db:migrate:local` and `pnpm db:youtube:migrate:local`.
-6. Smoke the YouTube tab and `tools/list` in the dev server.
-7. Update section 1 if an upstream pattern we rely on changed.
+6. If upstream changed any skill or `scripts/sync-plugin-skills.mjs`, run `pnpm sync-plugin-skills` and commit the plugin copy.
+7. Smoke the YouTube tab (`/p/<id>/youtube?q=<cached keyword>&rows=5` reuses the R2 cache) and `tools/list` in the dev server.
+8. Update section 1 if an upstream pattern we rely on changed.
+   Files most likely to conflict: `src/server/lib/dataforseo/client.ts`, `src/server/mcp/server.ts`, `src/client/navigation/items.ts`, `package.json`, `knip.jsonc`.
 
 ## 8. Upstream touch-point register
 
@@ -921,13 +926,13 @@ Phase 5
 
 Phase 6
 
-- [ ] 6.1 Calibration sample supplied
-- [ ] 6.2 Calibration script
-- [ ] 6.3 Constants updated and results recorded
-- [ ] Phase 6 exit gate passed
+- [ ] 6.1 Calibration sample supplied (waiting on the user's VidIQ CSV: `keyword,vidiq_volume`, 100 to 200 rows across volume tiers, ideally including "how to tie a tie")
+- [x] 6.2 Calibration script (`scripts/youtube-volume-calibration.ts` over the pure `fitYoutubeScoring` in `src/shared/youtube-calibration.ts`, 2 tests). Not yet run live: needs the CSV and a positive DataForSEO balance (about 0.09 USD per 700 keywords plus 0.011 USD per 4 keywords).
+- [ ] 6.3 Constants updated and results recorded (after 6.1)
+- [ ] Phase 6 exit gate passed (blocked on 6.1)
 
 Phase 7
 
-- [ ] 7.1 Sync docs current
-- [ ] 7.2 Self-hosting note
-- [ ] Phase 7 exit gate passed
+- [x] 7.1 Sync docs current (section 7 gained the plugin-sync step, the cached-keyword smoke, and the likely-conflict list; no separate UPSTREAM_SYNC.md needed)
+- [x] 7.2 Self-hosting note (`docs/seoforge/YOUTUBE_DATA_API.md`)
+- [x] Phase 7 exit gate passed with a caveat: the runbook was executed on 2026-09-05 (`main` fast-forwarded to `upstream/main`, merged into `seo-forge`), but upstream had no new commits since the fork point (3632f40), so the merge was a no-op and the register's conflict prediction could not be exercised. `pnpm ci:check` and `pnpm test` pass after the sync; `pnpm test:e2e` still needs the Playwright config edit and browser download (see Phase 4 facts). Phase 7 ran ahead of Phase 6, which is blocked on the user's CSV.
