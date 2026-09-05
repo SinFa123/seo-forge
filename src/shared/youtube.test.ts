@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   YOUTUBE_KEYWORD_COLUMNS,
-  YOUTUBE_SCORING,
   YOUTUBE_VIDEO_COLUMNS,
+  formatChannelMultiplier,
+  formatDuration,
+} from "@/shared/youtube-columns";
+import {
+  YOUTUBE_SCORING,
   classifyKeywordKind,
   computeChannelMultiplier,
   computeCompetition,
@@ -11,8 +15,6 @@ import {
   computeViewsPerHour,
   countWords,
   estimateSearchVolume,
-  formatChannelMultiplier,
-  formatDuration,
   median,
   normalizeYoutubeKeyword,
   parseRelativePublicationDate,

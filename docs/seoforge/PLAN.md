@@ -174,6 +174,20 @@ Paths are relative to the repo root.
   With two keywords and no `item_types`, only `google_trends_graph` is returned (53 weekly points for `past_12_months`).
   Consequence: Trends is used only for the seed (one request seed plus benchmark for the share factor, one single-keyword request for related queries), never per candidate.
 
+### Resolved during Phase 2
+
+- A live YouTube organic SERP with `block_depth: 20` returned 30 items for "sourdough bread" (verified 2026-09-05), so the services slice SERP items to the requested depth before buying video info.
+- Server functions cannot be called with curl: TanStack Start 1.168 encodes arguments with seroval in a framed protocol (`@tanstack/start-client-core/dist/esm/client-rpc/serverFnFetcher.js`).
+  The reliable way to call one from the dev server is a headless browser on any project page running `await import("/src/serverFunctions/youtube.ts")` and calling the export with `{ data }`, so the app's own client RPC does the encoding.
+  Scripts used for the Phase 2 check are described in the Phase 3 handover notes.
+- The repo pins `@playwright/test` whose Chromium build is `1217`, but `~/.cache/ms-playwright` only holds build `1234` from another project.
+  `chromium.launch({ executablePath })` pointing at the `1234` headless shell works for ad-hoc scripts.
+  `pnpm test:e2e` will need `npx playwright install chromium` (a download, so it needs the user's approval) before Phase 4.8.
+- `src/shared/youtube.ts` at commit 49e54b0 already exceeded oxlint's `max-lines` (400 code lines), so the column definitions and cell formatters now live in `src/shared/youtube-columns.ts`.
+- Live estimates on 2026-09-05 (US, en): "sourdough bread" seed 78,916 (high; Trends share 0.39, seed interest 10.9 vs benchmark 41.5), "banana bread" seed 107,224 (high; share 0.36).
+  Candidate volumes can exceed the seed's because Google Ads reports close-variant groups ("banana bread recipe" anchors far above "banana bread"); Phase 6 calibration is expected to address this.
+- One research run with `serpRowLimit` 3 to 5 took 34 to 41 seconds wall clock on the dev server and cost about 0.20 USD (20 video info calls are 0.12 of that).
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
@@ -211,11 +225,14 @@ docs/seoforge/
 
 src/shared/
   brand.ts                                      NEW  BRAND_NAME and related display constants (exists)
-  youtube.ts                                    NEW  row types, column definitions, scoring formulas, confidence enum (exists)
-  youtube.test.ts                               NEW  formula tests (exists)
+  youtube.ts                                    NEW  row types, scoring formulas, confidence enum (exists)
+  youtube-columns.ts                            NEW  YOUTUBE_KEYWORD_COLUMNS, YOUTUBE_VIDEO_COLUMNS, cell formatters (exists)
+  youtube.test.ts                               NEW  formula and column tests (exists)
 
+src/types/
+  youtube.ts                                    NEW  YoutubeResearchResult, YoutubeVideosResult, YoutubeSavedKeywordRow, diagnostics (exists)
 src/types/schemas/
-  youtube.ts                                    NEW  Zod: research input, videos input, saved keywords, route search params (exists)
+  youtube.ts                                    NEW  Zod: research input, videos input, saved keywords, row schemas, route search params (exists)
 
 src/server/lib/dataforseo/
   youtube.ts                                    NEW  fetchYoutubeSerp, fetchYoutubeVideoInfo
@@ -227,13 +244,17 @@ src/server/lib/
   youtubeDataApiClient.ts                       NEW  channels, uploads playlist, video statistics
 
 src/server/features/youtube/
-  services/YoutubeResearchService.ts            NEW  public service object
-  services/research/research.ts                 NEW  keyword research orchestration + R2 cache
-  services/research/videos.ts                   NEW  videos tab orchestration + channel multiplier
-  services/research/candidates.ts               NEW  related / matching / question candidate generation
-  services/research/volume.ts                   NEW  volume estimator (anchor, trends share, intent, calibration)
-  services/research/*.test.ts                   NEW
-  services/saved-keywords.ts                    NEW
+  services/YoutubeResearchService.ts            NEW  public service object (exists)
+  services/research/research.ts                 NEW  keyword research orchestration + R2 cache (exists)
+  services/research/videos.ts                   NEW  videos tab orchestration + channel multiplier (exists)
+  services/research/candidates.ts               NEW  suggest + Trends candidates, classify, cap (exists)
+  services/research/volume.ts                   NEW  Google Ads anchors, seed Trends interest, share (exists)
+  services/research/video-info.ts               NEW  cached video info snapshot, video row + competition input mappers (exists)
+  services/research/cache.ts                    NEW  namespaces, TTLs, Zod-validated cache read (exists)
+  services/research/helpers.ts                  NEW  mapWithConcurrency, DataForSEO timestamp parsing (exists)
+  services/research/{candidates,volume,research,videos}.test.ts NEW (exist)
+  services/saved-keywords.ts                    NEW  (exists)
+  services/saved-keywords.test.ts               NEW  (exists)
   repositories/YoutubeSavedKeywordsRepository.ts NEW  (exists)
 
 src/db/
@@ -249,7 +270,7 @@ drizzle-pg-youtube.config.ts                    NEW
 scripts/youtube-migrate-d1.ts                   NEW  applies drizzle-youtube/*.sql via wrangler d1 execute, tracked in youtube_migrations
 
 src/serverFunctions/
-  youtube.ts                                    NEW  researchYoutubeKeywords, getYoutubeVideos, saveYoutubeKeywords, getSavedYoutubeKeywords, removeSavedYoutubeKeywords
+  youtube.ts                                    NEW  researchYoutubeKeywords, getYoutubeVideos, saveYoutubeKeywords, getSavedYoutubeKeywords, removeSavedYoutubeKeywords (exists)
 
 src/server/mcp/tools/
   youtube-tools.ts                              NEW  research_youtube_keywords, get_youtube_videos, save_youtube_keywords, list_saved_youtube_keywords
@@ -604,42 +625,38 @@ Phase 2 exit gate
 - Each server function has been called from the dev server with a real keyword and returned scored rows.
 - `pnpm ci:check` and `pnpm test` pass.
 
-### Phase 2 handover notes (updated 2026-09-05, second pause)
+### Phase 3 handover notes (updated 2026-09-05)
 
-Where the previous session stopped, and what the next session does first.
+Phase 2 is complete and committed; the tree is clean and tsc, oxlint, prettier, and vitest (1213 tests) are green.
+`pnpm ci:check` fails only on knip: `src/serverFunctions/youtube.ts` and `YoutubeResearchService.ts` are unused files, and the schemas, sort field lists, and route-param types in `src/types/schemas/youtube.ts` are unused exports, until the MCP tools (Phase 3) and the route and UI (Phase 4) import them.
+Everything else in `ci:check` passes.
 
-DONE in Phase 2 so far (all committed, tree clean, tsc/oxlint/prettier/vitest green):
+What exists for the MCP tools to call:
 
-- 2.1 `src/shared/youtube.ts`: row types (`YoutubeKeywordRow`, `YoutubeVideoRow`, `YoutubeResearchOverview`), `YOUTUBE_KEYWORD_COLUMNS`, `YOUTUBE_VIDEO_COLUMNS`, `YOUTUBE_SCORING`, and every formula from section 5, with 15 tests in `src/shared/youtube.test.ts`.
-- 2.1 `src/types/schemas/youtube.ts`: `researchYoutubeKeywordsSchema` (`serpRowLimit` 0-200, default 30), `getYoutubeVideosSchema` (`depth` 20-100, default 20), `youtubeSavedKeywordInputSchema`, `saveYoutubeKeywordsSchema`, `getSavedYoutubeKeywordsSchema`, `removeSavedYoutubeKeywordsSchema`, `youtubeSearchSchema` (route params `q`, `loc`, `lang`, `tab`, `sort`, `order`, `rows`, `kind`, `questions`), the `Resolved*Input` types, and the constants `YOUTUBE_SERP_ROW_LIMIT_DEFAULT/MAX`, `YOUTUBE_VIDEOS_DEPTH_DEFAULT/MAX`, `youtubeSortFields`, `youtubeSavedSortFields`, `youtubeTabs`.
-- 1.9 `src/server/features/youtube/repositories/YoutubeSavedKeywordsRepository.ts` (`upsertMany`, `list`, `listByIds`, `removeByIds`).
+- `YoutubeResearchService` in `src/server/features/youtube/services/YoutubeResearchService.ts` with `research(input, billingCustomer)`, `getVideos(input, billingCustomer)`, `saveKeywords(input)`, `getSavedKeywords(input)`, `removeSavedKeywords(input)`.
+  Inputs are the `Resolved*` types from `src/types/schemas/youtube.ts` (market already resolved with `resolveMarket`).
+  Results are `YoutubeResearchResult`, `YoutubeVideosResult`, and the saved shapes in `src/types/youtube.ts`.
+- `research` returns `{ seed: YoutubeResearchOverview, rows: YoutubeKeywordRow[], diagnostics, fetchedAt }`; rows are ordered by Google anchor volume descending and the first `serpRowLimit` carry a competition score.
+  `diagnostics.apiCalls` counts the provider calls actually made (cache hits excluded).
+- `getVideos` returns `{ keyword, rows: YoutubeVideoRow[], dataApiStatus, fetchedAt }`; `channelMultiplier` is null unless `dataApiStatus` is `ok`.
+- Text tables come from `YOUTUBE_KEYWORD_COLUMNS` and `YOUTUBE_VIDEO_COLUMNS` in `src/shared/youtube-columns.ts` (`key`, `label`, `align`, `format`).
+- Row Zod schemas for MCP `outputSchema`: `youtubeKeywordRowSchema` and `youtubeVideoRowSchema` in `src/types/schemas/youtube.ts`.
 
-NOT done: 2.2 through 2.7 (nothing exists under `src/server/features/youtube/services/`), all of Phases 3 to 7.
+How the Phase 2 live check was done (reuse for Phase 3.3 and Phase 4):
 
-Next session starts at step 2.2 (candidate generation). Read these before writing the services, in this order: `src/server/features/keywords/services/research/research.ts` (cache pattern with `buildCacheKey`, `getCached`, `setCached`, Zod-validated cache reads, `CACHE_VERSION`), `research-data.ts` (how `createDataforseoClient(billingCustomer)` is used), `saved-keywords.ts` and its test (service test mocking style: `vi.hoisted` mocks of the repository object), `KeywordResearchService.ts` (the `as const` public object).
+- Dev server on port 3011 (`PORT=3011 pnpm dev`), project "SEO Forge Dev" id `cf1e6f1a-ad76-4368-8c60-42b48415be27`.
+- A Node script requiring `node_modules/@playwright/test`, launching Chromium with `executablePath` set to the cached `~/.cache/ms-playwright/chromium_headless_shell-1234/.../chrome-headless-shell`, opening `/p/<projectId>/keywords` with `waitUntil: "load"` (the Vite websocket keeps the page from ever reaching `networkidle`), then `page.evaluate` of `await import("/src/serverFunctions/youtube.ts")` and calling each export with `{ data }`.
+- All five server functions returned correct results: research (200 rows, seed scored, second call served from cache in 110 ms), videos (20 rows, `dataApiStatus: "not_configured"`), save (3, idempotent on re-save), list (3, sorted), remove (all removed, list total 0 afterwards).
 
-Decisions already made for the services (do not re-litigate):
+Decisions for Phase 3 (do not re-litigate):
 
-- Candidate generation: seed suggestions plus seed + each letter a-z plus question prefixes ("how to", "why", "what", "when", "can", "is", "does", "should", "best") through `fetchYoutubeSuggestions`, plus Trends related queries (top and rising) for the seed. De-duplicate with `normalizeYoutubeKeyword`, classify with `classifyKeywordKind`, cap at 200 before hydration. Drop candidates longer than 80 characters or 10 words or containing characters outside letters, digits, space, apostrophe, hyphen (Google Ads rejects them and one bad keyword fails the whole batch).
-- Volume anchor: one bulk `client.keywords.adsSearchVolume` call for seed plus all candidates.
-- Trends: exactly two requests per research, both `type: "youtube"`: `[seed, BENCHMARK.keyword]` for the graph (share factor via `computeSeedYoutubeShare` using the mean of the last 12 weekly values per keyword) and `[seed]` alone for related queries. Never per candidate.
-- Seed: one YouTube SERP (depth 20) plus up to 20 video-info calls, each video-info result cached in R2 for 24 hours under `youtube:video-info` keyed by videoId and market, so the Videos tab reuses them.
-- Rows: one YouTube SERP per candidate for the first `serpRowLimit` candidates (ordered by anchor volume desc), competition via `computeCompetition` with subscribers null and `publishedAt` from `parseRelativePublicationDate`. Rows beyond the limit get `competition: null`.
-- Concurrency: run row SERPs and video-info calls through a small local helper with a limit of 8 (no library; upstream has no shared helper).
-- Cache the whole research result under `youtube:research` for 24 hours and the whole videos result under `youtube:videos` for 6 hours; include `YOUTUBE_SCORING.ESTIMATOR_VERSION`, organizationId, projectId, keyword, market, and serpRowLimit (or depth) in the key; validate cached values with Zod on read.
-- Channel multiplier (videos tab): `getChannelRecentUploads` per distinct channel, cached 7 days under `youtube:channel-stats`; exclude the ranked video itself from the sample; null when the Data API result is `not_configured` or `error`; the response carries `dataApiStatus: "ok" | "not_configured" | "error"` so the UI can show the setup hint.
-- Services take `BillingCustomerContext` like upstream's; server functions pass `context`, MCP tools pass `context.billing`.
-- Saved keywords: `saveYoutubeKeywords` normalizes keywords, sets `fetchedAt` to now, upserts; `getSavedYoutubeKeywords` returns `{ rows, total, page, pageSize }`; `removeSavedYoutubeKeywords` returns `{ removed }`.
+- `research_youtube_keywords` takes 1 to 5 seeds and calls `YoutubeResearchService.research` per seed with `context.billing`; per-seed `ok` or `error` like upstream's `research_keywords`.
+  Default `serpRowLimit` for MCP is the schema default (30); the description states the cost per run (about 0.20 USD at the default plus 0.002 USD per row SERP) and that volume is an estimate with a confidence column.
+- `get_youtube_videos` returns rows with `thumbnailUrl` and `url`; description states the cost (0.002 USD per 20 SERP results plus 0.006 USD per video for video info, cached 24 hours).
+- `save_youtube_keywords` takes scored rows (the `youtubeKeywordRowSchema` shape) so the MCP caller passes back what research returned; `list_saved_youtube_keywords` mirrors `getSavedYoutubeKeywordsSchema`.
+- Register through `register(<tool>)` in `src/server/mcp/server.ts` only; that file is already in the register for the brand rename.
 
-Environment facts for the next session:
-
-- Branch `seo-forge`, remotes `origin` (SinFa123/seo-forge) and `upstream` (every-app/open-seo). Nothing pushed.
-- `.env.local` exists (`AUTH_MODE=local_noauth`, DataForSEO key). `YOUTUBE_DATA_API_KEY` unset; the user's GCP project has the YouTube Data API disabled (probe returned 403). Ask the user to enable it, but do not block on it.
-- Local D1 has upstream migrations and the YouTube migration applied. Test project "SEO Forge Dev" (example.com) id `cf1e6f1a-ad76-4368-8c60-42b48415be27`.
-- Dev server: `PORT=3011 pnpm dev` (or `pnpm dev:agents`). MCP at `http://localhost:3011/mcp`, no token needed in local_noauth.
-- knip lists the Phase 1 and shared exports as unused until the services import them; it clears at the Phase 2 gate.
-- Sorting: use `sort` from `remeda` for copies. oxlint forbids `Array#sort`, and `toSorted` is not in the configured ES2022 lib.
-- Prettier and oxlint must be run on every new file before committing; both are strict.
+Ask the user (not blocking): enable the YouTube Data API on the GCP project so 1.6 and 2.5 can be verified live; supply the VidIQ calibration CSV for Phase 6.
 
 ### Phase 3: MCP tools
 
@@ -840,13 +857,13 @@ Phase 1
 Phase 2
 
 - [x] 2.1 Shared types, schemas, formulas, tests (`src/shared/youtube.ts` + 15 tests in `src/shared/youtube.test.ts`; `src/types/schemas/youtube.ts`)
-- [ ] 2.2 Candidates
-- [ ] 2.3 Volume estimator
-- [ ] 2.4 Research orchestration
-- [ ] 2.5 Videos orchestration
-- [ ] 2.6 Saved keywords and service object
-- [ ] 2.7 Server functions
-- [ ] Phase 2 exit gate passed
+- [x] 2.2 Candidates (`candidates.ts`, 3 tests: ordering, de-duplication, cap, Google Ads charset)
+- [x] 2.3 Volume estimator (`volume.ts`, 5 tests: bulk anchors, trailing-window interest, share derivation, benchmark-as-seed)
+- [x] 2.4 Research orchestration (`research.ts`, 3 tests: section 4 call counts, cache short-circuit, no-Trends fallback)
+- [x] 2.5 Videos orchestration (`videos.ts`, 3 tests: multiplier excluding the ranked video, not_configured, error)
+- [x] 2.6 Saved keywords and service object (`saved-keywords.ts`, 3 tests; `YoutubeResearchService.ts`)
+- [x] 2.7 Server functions (`src/serverFunctions/youtube.ts`; all five called from the dev server via headless Chromium, see Phase 3 handover notes)
+- [x] Phase 2 exit gate passed: tsc clean, oxlint 0 errors, prettier clean, 1213 tests pass, live research for "sourdough bread" and "banana bread" returned scored rows with the section 4 call counts, saved keywords verified against local D1 through the server functions. knip still flags the Phase 3 and 4 consumers (recorded in the handover notes); the rest of `ci:check` passes.
 
 Phase 3
 

@@ -16,7 +16,7 @@ import {
 // src/server/features/youtube/services/research/volume.ts).
 
 /** Default page size. DataForSEO bills YouTube organic per 20 results. */
-export const YOUTUBE_SERP_DEFAULT_DEPTH = 20;
+const YOUTUBE_SERP_DEFAULT_DEPTH = 20;
 const YOUTUBE_SERP_MIN_DEPTH = 20;
 const YOUTUBE_SERP_MAX_DEPTH = 200;
 

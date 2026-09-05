@@ -24,16 +24,11 @@ import { AppError } from "@/server/lib/errors";
 // (e.g. 25000 = +25000%), top query `value` is 0-100.
 
 /** DataForSEO rejects more than five keywords per explore request. */
-export const GOOGLE_TRENDS_MAX_KEYWORDS = 5;
+const GOOGLE_TRENDS_MAX_KEYWORDS = 5;
 
-export type GoogleTrendsType =
-  | "web"
-  | "news"
-  | "youtube"
-  | "images"
-  | "froogle";
+type GoogleTrendsType = "web" | "news" | "youtube" | "images" | "froogle";
 
-export type GoogleTrendsTimeRange =
+type GoogleTrendsTimeRange =
   | "past_hour"
   | "past_4_hours"
   | "past_day"

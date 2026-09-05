@@ -66,7 +66,11 @@ export const getYoutubeVideosSchema = z.object({
     .default(YOUTUBE_VIDEOS_DEPTH_DEFAULT),
 });
 
-export const youtubeSavedKeywordInputSchema = z.object({
+/**
+ * One scored keyword row (the `YoutubeKeywordRow` contract). Doubles as the
+ * saved-keyword input, the R2 cache read validator, and the MCP output row.
+ */
+export const youtubeKeywordRowSchema = z.object({
   keyword: keywordInputSchema,
   kind: z.enum(YOUTUBE_KEYWORD_KINDS),
   searchVolume: z.number().int().nonnegative().nullable(),
@@ -76,10 +80,32 @@ export const youtubeSavedKeywordInputSchema = z.object({
   wordCount: z.number().int().nonnegative(),
 });
 
+export const youtubeVideoRowSchema = z.object({
+  rank: z.number().int().positive(),
+  videoId: z.string(),
+  title: z.string(),
+  url: z.string(),
+  thumbnailUrl: z.string().nullable(),
+  channelId: z.string().nullable(),
+  channelName: z.string().nullable(),
+  channelUrl: z.string().nullable(),
+  publishedAt: z.string().nullable(),
+  publishedLabel: z.string().nullable(),
+  viewsCount: z.number().nullable(),
+  likesCount: z.number().nullable(),
+  commentsCount: z.number().nullable(),
+  durationSeconds: z.number().nullable(),
+  isShorts: z.boolean(),
+  isLive: z.boolean(),
+  viewsPerHour: z.number().nullable(),
+  subscribersCount: z.number().nullable(),
+  channelMultiplier: z.number().nullable(),
+});
+
 export const saveYoutubeKeywordsSchema = z.object({
   projectId: z.string().min(1),
   ...marketSchema,
-  rows: z.array(youtubeSavedKeywordInputSchema).min(1).max(500),
+  rows: z.array(youtubeKeywordRowSchema).min(1).max(500),
 });
 
 export const getSavedYoutubeKeywordsSchema = z.object({
@@ -125,9 +151,6 @@ export type GetSavedYoutubeKeywordsInput = z.infer<
 >;
 export type RemoveSavedYoutubeKeywordsInput = z.infer<
   typeof removeSavedYoutubeKeywordsSchema
->;
-export type YoutubeSavedKeywordInput = z.infer<
-  typeof youtubeSavedKeywordInputSchema
 >;
 export type YoutubeSearchParams = z.infer<typeof youtubeSearchSchema>;
 

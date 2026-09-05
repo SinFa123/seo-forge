@@ -15,22 +15,22 @@ import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 
 export const YOUTUBE_DATA_API_KEY_ENV = "YOUTUBE_DATA_API_KEY";
 /** Recent uploads sampled per channel. The uploads playlist is newest-first. */
-export const CHANNEL_UPLOAD_SAMPLE_SIZE = 20;
+const CHANNEL_UPLOAD_SAMPLE_SIZE = 20;
 const API_BASE = "https://www.googleapis.com/youtube/v3";
 const REQUEST_TIMEOUT_MS = 10_000;
 
-export type ChannelUpload = {
+type ChannelUpload = {
   videoId: string;
   viewCount: number;
   publishedAt: string | null;
 };
 
-export type ChannelRecentUploads = {
+type ChannelRecentUploads = {
   channelId: string;
   uploads: ChannelUpload[];
 };
 
-export type YoutubeDataApiResult<T> =
+type YoutubeDataApiResult<T> =
   | { status: "ok"; data: T }
   | { status: "not_configured" }
   | { status: "error"; message: string };

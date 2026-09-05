@@ -9,7 +9,7 @@ import { youtubeSavedKeywords } from "@/db/youtube/schema";
 export type YoutubeSavedKeywordRecord =
   typeof youtubeSavedKeywords.$inferSelect;
 
-export type YoutubeSavedKeywordSortField =
+type YoutubeSavedKeywordSortField =
   | "createdAt"
   | "keyword"
   | "searchVolume"
