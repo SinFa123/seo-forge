@@ -211,11 +211,11 @@ docs/seoforge/
 
 src/shared/
   brand.ts                                      NEW  BRAND_NAME and related display constants (exists)
-  youtube.ts                                    NEW  row types, column definitions, scoring formulas, confidence enum (exists, untested)
-  youtube.test.ts                               NEW  formula tests (not yet written)
+  youtube.ts                                    NEW  row types, column definitions, scoring formulas, confidence enum (exists)
+  youtube.test.ts                               NEW  formula tests (exists)
 
 src/types/schemas/
-  youtube.ts                                    NEW  Zod: research input, videos input, saved keywords, route search params
+  youtube.ts                                    NEW  Zod: research input, videos input, saved keywords, route search params (exists)
 
 src/server/lib/dataforseo/
   youtube.ts                                    NEW  fetchYoutubeSerp, fetchYoutubeVideoInfo
@@ -234,7 +234,7 @@ src/server/features/youtube/
   services/research/volume.ts                   NEW  volume estimator (anchor, trends share, intent, calibration)
   services/research/*.test.ts                   NEW
   services/saved-keywords.ts                    NEW
-  repositories/YoutubeSavedKeywordsRepository.ts NEW
+  repositories/YoutubeSavedKeywordsRepository.ts NEW  (exists)
 
 src/db/
   youtube.schema.ts                             NEW  SQLite tables
@@ -604,26 +604,42 @@ Phase 2 exit gate
 - Each server function has been called from the dev server with a real keyword and returned scored rows.
 - `pnpm ci:check` and `pnpm test` pass.
 
-### Phase 2 handover notes (written 2026-09-05 at the pause point)
+### Phase 2 handover notes (updated 2026-09-05, second pause)
 
-State when the previous session paused:
+Where the previous session stopped, and what the next session does first.
 
-- `src/shared/youtube.ts` EXISTS and compiles: row types (`YoutubeKeywordRow`, `YoutubeVideoRow`, `YoutubeResearchOverview`), `YOUTUBE_KEYWORD_COLUMNS`, `YOUTUBE_VIDEO_COLUMNS`, `YOUTUBE_SCORING`, and every formula from section 5 (`normalizeYoutubeKeyword`, `countWords`, `classifyKeywordKind`, `computeViewsPerHour`, `parseRelativePublicationDate`, `median`, `computeChannelMultiplier`, `computeCompetition`, `computeSeedYoutubeShare`, `estimateSearchVolume`, `computeOverallScore`, plus display formatters).
-  It has NO tests yet. Writing `src/shared/youtube.test.ts` is the first task of the next session.
-- `src/types/schemas/youtube.ts` does NOT exist yet.
-  Intended contents, already decided: `researchYoutubeKeywordsSchema` (projectId, keyword 1-200 chars, optional locationCode/languageCode, `serpRowLimit` int 0-200 default 30), `getYoutubeVideosSchema` (keyword, market, `depth` int 20-100 default 20), `youtubeSavedKeywordInputSchema` (keyword, kind, searchVolume, volumeConfidence, competition, overallScore, wordCount), `saveYoutubeKeywordsSchema` (projectId, market, rows 1-500), `getSavedYoutubeKeywordsSchema` (page, pageSize max 200, sort over the saved sort fields, order), `removeSavedYoutubeKeywordsSchema` (savedKeywordIds 1-2000), and `youtubeSearchSchema` for the route (`q`, `loc` coerced number, `lang`, `tab` keywords|videos|saved, `sort`, `order`, `rows` coerced number, `kind`).
-  Also export `Resolved*Input` types the way `src/types/schemas/keywords.ts` does with `ResolvedMarket`.
-- Nothing under `src/server/features/youtube/services/` exists yet.
-  The repository exists.
-- Default `serpRowLimit` was lowered from 50 to 30 to keep a research run under roughly 30 seconds; the constant belongs in the schemas file.
-- knip currently lists the Phase 1 and `shared/youtube.ts` exports as unused.
-  That is expected until the service and MCP tools import them; it clears at the Phase 2 gate.
-- The local dev server from the previous session (port 3011) will not be running; start it with `PORT=3011 pnpm dev` (or `pnpm dev:agents`).
-  Local D1 already has upstream migrations and the YouTube migration applied, and one project "SEO Forge Dev" (example.com, id `cf1e6f1a-ad76-4368-8c60-42b48415be27`) created over MCP for testing.
-- `.env.local` exists with `AUTH_MODE=local_noauth` and the DataForSEO key.
-  `YOUTUBE_DATA_API_KEY` is not set; the user's GCP project has the YouTube Data API disabled.
-- Live DataForSEO sample responses from Phase 1 were saved only in the previous session's scratchpad and are gone; the unit tests carry representative fixtures instead.
-- Upstream sort convention: use `sort` from `remeda` for copies (oxlint forbids `Array#sort`, and `toSorted` is not in the configured TS lib).
+DONE in Phase 2 so far (all committed, tree clean, tsc/oxlint/prettier/vitest green):
+
+- 2.1 `src/shared/youtube.ts`: row types (`YoutubeKeywordRow`, `YoutubeVideoRow`, `YoutubeResearchOverview`), `YOUTUBE_KEYWORD_COLUMNS`, `YOUTUBE_VIDEO_COLUMNS`, `YOUTUBE_SCORING`, and every formula from section 5, with 15 tests in `src/shared/youtube.test.ts`.
+- 2.1 `src/types/schemas/youtube.ts`: `researchYoutubeKeywordsSchema` (`serpRowLimit` 0-200, default 30), `getYoutubeVideosSchema` (`depth` 20-100, default 20), `youtubeSavedKeywordInputSchema`, `saveYoutubeKeywordsSchema`, `getSavedYoutubeKeywordsSchema`, `removeSavedYoutubeKeywordsSchema`, `youtubeSearchSchema` (route params `q`, `loc`, `lang`, `tab`, `sort`, `order`, `rows`, `kind`, `questions`), the `Resolved*Input` types, and the constants `YOUTUBE_SERP_ROW_LIMIT_DEFAULT/MAX`, `YOUTUBE_VIDEOS_DEPTH_DEFAULT/MAX`, `youtubeSortFields`, `youtubeSavedSortFields`, `youtubeTabs`.
+- 1.9 `src/server/features/youtube/repositories/YoutubeSavedKeywordsRepository.ts` (`upsertMany`, `list`, `listByIds`, `removeByIds`).
+
+NOT done: 2.2 through 2.7 (nothing exists under `src/server/features/youtube/services/`), all of Phases 3 to 7.
+
+Next session starts at step 2.2 (candidate generation). Read these before writing the services, in this order: `src/server/features/keywords/services/research/research.ts` (cache pattern with `buildCacheKey`, `getCached`, `setCached`, Zod-validated cache reads, `CACHE_VERSION`), `research-data.ts` (how `createDataforseoClient(billingCustomer)` is used), `saved-keywords.ts` and its test (service test mocking style: `vi.hoisted` mocks of the repository object), `KeywordResearchService.ts` (the `as const` public object).
+
+Decisions already made for the services (do not re-litigate):
+
+- Candidate generation: seed suggestions plus seed + each letter a-z plus question prefixes ("how to", "why", "what", "when", "can", "is", "does", "should", "best") through `fetchYoutubeSuggestions`, plus Trends related queries (top and rising) for the seed. De-duplicate with `normalizeYoutubeKeyword`, classify with `classifyKeywordKind`, cap at 200 before hydration. Drop candidates longer than 80 characters or 10 words or containing characters outside letters, digits, space, apostrophe, hyphen (Google Ads rejects them and one bad keyword fails the whole batch).
+- Volume anchor: one bulk `client.keywords.adsSearchVolume` call for seed plus all candidates.
+- Trends: exactly two requests per research, both `type: "youtube"`: `[seed, BENCHMARK.keyword]` for the graph (share factor via `computeSeedYoutubeShare` using the mean of the last 12 weekly values per keyword) and `[seed]` alone for related queries. Never per candidate.
+- Seed: one YouTube SERP (depth 20) plus up to 20 video-info calls, each video-info result cached in R2 for 24 hours under `youtube:video-info` keyed by videoId and market, so the Videos tab reuses them.
+- Rows: one YouTube SERP per candidate for the first `serpRowLimit` candidates (ordered by anchor volume desc), competition via `computeCompetition` with subscribers null and `publishedAt` from `parseRelativePublicationDate`. Rows beyond the limit get `competition: null`.
+- Concurrency: run row SERPs and video-info calls through a small local helper with a limit of 8 (no library; upstream has no shared helper).
+- Cache the whole research result under `youtube:research` for 24 hours and the whole videos result under `youtube:videos` for 6 hours; include `YOUTUBE_SCORING.ESTIMATOR_VERSION`, organizationId, projectId, keyword, market, and serpRowLimit (or depth) in the key; validate cached values with Zod on read.
+- Channel multiplier (videos tab): `getChannelRecentUploads` per distinct channel, cached 7 days under `youtube:channel-stats`; exclude the ranked video itself from the sample; null when the Data API result is `not_configured` or `error`; the response carries `dataApiStatus: "ok" | "not_configured" | "error"` so the UI can show the setup hint.
+- Services take `BillingCustomerContext` like upstream's; server functions pass `context`, MCP tools pass `context.billing`.
+- Saved keywords: `saveYoutubeKeywords` normalizes keywords, sets `fetchedAt` to now, upserts; `getSavedYoutubeKeywords` returns `{ rows, total, page, pageSize }`; `removeSavedYoutubeKeywords` returns `{ removed }`.
+
+Environment facts for the next session:
+
+- Branch `seo-forge`, remotes `origin` (SinFa123/seo-forge) and `upstream` (every-app/open-seo). Nothing pushed.
+- `.env.local` exists (`AUTH_MODE=local_noauth`, DataForSEO key). `YOUTUBE_DATA_API_KEY` unset; the user's GCP project has the YouTube Data API disabled (probe returned 403). Ask the user to enable it, but do not block on it.
+- Local D1 has upstream migrations and the YouTube migration applied. Test project "SEO Forge Dev" (example.com) id `cf1e6f1a-ad76-4368-8c60-42b48415be27`.
+- Dev server: `PORT=3011 pnpm dev` (or `pnpm dev:agents`). MCP at `http://localhost:3011/mcp`, no token needed in local_noauth.
+- knip lists the Phase 1 and shared exports as unused until the services import them; it clears at the Phase 2 gate.
+- Sorting: use `sort` from `remeda` for copies. oxlint forbids `Array#sort`, and `toSorted` is not in the configured ES2022 lib.
+- Prettier and oxlint must be run on every new file before committing; both are strict.
 
 ### Phase 3: MCP tools
 
@@ -823,7 +839,7 @@ Phase 1
 
 Phase 2
 
-- [ ] 2.1 Shared types, schemas, formulas, tests (IN PROGRESS: `src/shared/youtube.ts` written and compiling, no tests; `src/types/schemas/youtube.ts` not written; see Phase 2 handover notes)
+- [x] 2.1 Shared types, schemas, formulas, tests (`src/shared/youtube.ts` + 15 tests in `src/shared/youtube.test.ts`; `src/types/schemas/youtube.ts`)
 - [ ] 2.2 Candidates
 - [ ] 2.3 Volume estimator
 - [ ] 2.4 Research orchestration

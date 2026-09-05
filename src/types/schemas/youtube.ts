@@ -95,7 +95,7 @@ export const removeSavedYoutubeKeywordsSchema = z.object({
   savedKeywordIds: z.array(z.string().min(1)).min(1).max(2000),
 });
 
-/** Route search params for /p/$projectId/youtube. URL is the page state. */
+/** Route search params for /p/$projectId/youtube. The URL is the page state. */
 export const youtubeSearchSchema = z.object({
   q: z.string().optional(),
   loc: z.coerce.number().int().positive().optional(),
@@ -129,6 +129,7 @@ export type RemoveSavedYoutubeKeywordsInput = z.infer<
 export type YoutubeSavedKeywordInput = z.infer<
   typeof youtubeSavedKeywordInputSchema
 >;
+export type YoutubeSearchParams = z.infer<typeof youtubeSearchSchema>;
 
 type ResolvedMarket = { locationCode: number; languageCode: string };
 export type ResolvedResearchYoutubeKeywordsInput = Omit<
