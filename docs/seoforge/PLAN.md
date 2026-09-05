@@ -881,8 +881,8 @@ Phase 3
 
 - [x] 3.1 MCP tools and tests (`youtube-tools.ts`, 6 tests: per-seed results and shared columns, video table and Data API hint, language check, save mapping, list defaults, FORBIDDEN before service)
 - [x] 3.2 Registration (`server.ts` +10 lines; `tools/list` shows the four tools with cost and estimate wording)
-- [ ] 3.3 verify-local-mcp pass (protocol smoke done 2026-09-05: tools/list, cached research parity with the server function, videos, empty saved list, failed-seed path; consumer probe status below)
-- [ ] Phase 3 exit gate passed
+- [x] 3.3 verify-local-mcp pass (2026-09-05). Protocol smoke over curl: tools/list, cached research parity with the server function, videos, empty saved list, failed-seed path. Consumer probe (headless `claude -p --model sonnet`, natural task, tools never named): picked `research_youtube_keywords` and `get_youtube_videos` first try and called the cost disclosures useful; its one paid call failed because the DataForSEO balance was already exhausted. Feedback acted on: both paid descriptions now state that a call failing at DataForSEO before returning results is not charged. Feedback escalated to the user: a normalized message for HTTP 402 needs a new code in upstream's `src/shared/error-codes.ts`; `whoami` returning `creditsRemaining: null` in self-hosted mode is upstream behaviour. Re-run the probe once after the balance is topped up (zero code changes expected).
+- [x] Phase 3 exit gate passed: 6 tool tests, tools/list shows four tools with costs and the estimate caveat, protocol smoke and consumer probe run and acted on, MCP rows equal server-function rows within the cache window, tsc/oxlint/prettier/vitest green. knip flags only the Phase 4 consumers (`src/serverFunctions/youtube.ts`, route schema exports); the rest of `ci:check` passes.
 
 Phase 4
 
