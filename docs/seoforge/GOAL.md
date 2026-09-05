@@ -6,6 +6,7 @@ Everything else about the product stays as upstream ships it, so the fork can ke
 
 This file states what we are building and the constraints that bound every decision.
 The detailed, living implementation plan is in [PLAN.md](./PLAN.md).
+Current progress is always in PLAN.md section 9 (Status); a session resumes from the first unticked step there, reading any handover notes for the phase in progress.
 Read both at the start of every session that works on this project.
 
 ## What the YouTube Research tab does
@@ -74,6 +75,8 @@ The brand string is defined once in `src/shared/brand.ts` and imported where it 
 - Contributing the feature upstream as a pull request.
   Upstream does not merge external pull requests.
 - Rebranding anything beyond the presentation layer.
+- Per-candidate Google Trends lookups.
+  At 0.011 USD per request they would dominate the cost of a research run, so Trends informs the seed only and candidates inherit a dampened share.
 
 ## End state
 
@@ -98,11 +101,11 @@ The finished product is SEO Forge running as a whole, not a set of parts.
 
 ## Data sources
 
-| Need                                                   | Source                                           | Notes                                               |
-| ------------------------------------------------------ | ------------------------------------------------ | --------------------------------------------------- |
-| Top videos, views, publish time, thumbnails            | DataForSEO YouTube organic SERP                  | Same API key upstream already requires              |
-| Likes, comments, tags, subscriber count                | DataForSEO YouTube video info                    | Same key, three times the SERP price per video      |
-| Volume anchor                                          | DataForSEO Google Ads search volume              | Already wrapped by upstream                         |
-| YouTube-specific relative interest and related queries | DataForSEO Google Trends explore, type `youtube` | Relative 0 to 100 scale, five keywords per request  |
-| Autocomplete suggestions and questions                 | YouTube suggest endpoint                         | Unofficial, free, no key, may change without notice |
-| Channel recent uploads for the multiplier              | YouTube Data API v3                              | Free API key, daily quota, optional feature         |
+| Need                                                   | Source                                           | Notes                                                                                                                     |
+| ------------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Top videos, views, publish time, thumbnails            | DataForSEO YouTube organic SERP                  | Same API key upstream already requires                                                                                    |
+| Likes, comments, tags, subscriber count                | DataForSEO YouTube video info                    | Same key, three times the SERP price per video                                                                            |
+| Volume anchor                                          | DataForSEO Google Ads search volume              | Already wrapped by upstream                                                                                               |
+| YouTube-specific relative interest and related queries | DataForSEO Google Trends explore, type `youtube` | Seed keyword only: flat 0.011 USD per request, related queries only for single-keyword requests, values relative 0 to 100 |
+| Autocomplete suggestions and questions                 | YouTube suggest endpoint                         | Unofficial, free, no key, may change without notice                                                                       |
+| Channel recent uploads for the multiplier              | YouTube Data API v3                              | Free API key, 3 quota units per channel, optional; the user's GCP project must have the API enabled                       |
