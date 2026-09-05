@@ -328,9 +328,9 @@ src/client/features/youtube/
 src/client/navigation/items.ts                  EDIT one nav entry (done)
 src/client/features/search-tabs/types.ts        EDIT struck: see "Resolved during Phase 4"; not edited
 
-.agents/skills/youtube-research/SKILL.md        NEW
-plugins/openseo/skills/youtube-research/        GEN  via pnpm sync-plugin-skills
-scripts/sync-plugin-skills.mjs                  EDIT add "youtube-research" to the list
+.agents/skills/youtube-research/SKILL.md        NEW  (exists)
+plugins/openseo/skills/youtube-research/        GEN  via pnpm sync-plugin-skills (exists)
+scripts/sync-plugin-skills.mjs                  EDIT add "youtube-research" to the list (done)
 
 scripts/youtube-volume-calibration.ts           NEW  fits estimator constants from a VidIQ sample CSV
 
@@ -914,10 +914,10 @@ Phase 4
 
 Phase 5
 
-- [ ] 5.1 Skill
-- [ ] 5.2 Plugin sync
-- [ ] 5.3 SAM registration decision
-- [ ] Phase 5 exit gate passed
+- [x] 5.1 Skill (`.agents/skills/youtube-research/SKILL.md`: goal, inputs, project context and research log, the four tools with costs, workflow, output table in the tab's column order, guardrails on estimates, spend, and saving)
+- [x] 5.2 Plugin sync (`sync-plugin-skills.mjs` +1 line; `pnpm sync-plugin-skills` copies 10 skills; `pnpm ci:check` passes with a clean plugin diff)
+- [x] 5.3 SAM registration: none needed; `src/server/features/sam/samSkills.ts` globs every `.agents/skills/*/SKILL.md` without `metadata.internal`, so the skill is bundled automatically (recorded in section 1)
+- [x] Phase 5 exit gate passed (2026-09-05): a headless agent (`claude -p --model sonnet`) given only the SKILL.md as system prompt and the local MCP completed a sourdough-bread task using `research_youtube_keywords` and `get_youtube_videos` on cached results (no DataForSEO spend), saved nothing, and produced both tables in the skill's column order. Its feedback was folded into the skill: `serpRowLimit` scores head terms first, how to treat `competition: null`, the channel multiplier needs the Data API key, what counts as a matching research-log entry, and `unknown` in table cells. `pnpm sync-plugin-skills` leaves a clean diff after commit and `pnpm ci:check` passes.
 
 Phase 6
 

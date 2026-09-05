@@ -21,6 +21,7 @@ const skills = [
   "seo-audit",
   "seo-coach",
   "seo-project-setup",
+  "youtube-research",
 ];
 
 // Wipe and rebuild so a skill removed from the list above doesn't leave a
