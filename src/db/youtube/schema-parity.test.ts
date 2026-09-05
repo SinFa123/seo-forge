@@ -1,6 +1,7 @@
 import { getTableName, is, Table } from "drizzle-orm";
 import { getTableConfig as getSqliteTableConfig } from "drizzle-orm/sqlite-core";
 import { getTableConfig as getPgTableConfig } from "drizzle-orm/pg-core";
+import { sort } from "remeda";
 import { describe, expect, it } from "vitest";
 import * as sqliteYoutube from "../youtube.schema";
 import * as pgYoutube from "../pg/youtube.schema";
@@ -25,6 +26,8 @@ type TableShape = {
   indexes: string[];
 };
 
+const byString = (a: string, b: string) => a.localeCompare(b);
+
 function tablesFrom(mod: Record<string, unknown>) {
   const out = new Map<string, Table>();
   for (const value of Object.values(mod)) {
@@ -36,14 +39,15 @@ function tablesFrom(mod: Record<string, unknown>) {
 function shapeOf(table: Table, dialect: Dialect): TableShape {
   const config =
     dialect === "pg" ? getPgTableConfig(table) : getSqliteTableConfig(table);
-  const columns = config.columns
-    .map((column) => ({
+  const columns = sort(
+    config.columns.map((column) => ({
       name: column.name,
       notNull: column.notNull,
       hasDefault: column.hasDefault,
       primary: column.primary,
-    }))
-    .toSorted((a, b) => a.name.localeCompare(b.name));
+    })),
+    (a, b) => byString(a.name, b.name),
+  );
   const uniqueIndexes: string[] = [];
   const indexes: string[] = [];
   for (const index of config.indexes) {
@@ -55,8 +59,8 @@ function shapeOf(table: Table, dialect: Dialect): TableShape {
   }
   return {
     columns,
-    uniqueIndexes: uniqueIndexes.toSorted(),
-    indexes: indexes.toSorted(),
+    uniqueIndexes: sort(uniqueIndexes, byString),
+    indexes: sort(indexes, byString),
   };
 }
 
@@ -65,8 +69,8 @@ describe("YouTube schema parity (sqlite vs postgres)", () => {
   const pgTables = tablesFrom(pgYoutube);
 
   it("defines the same tables in both dialects", () => {
-    expect([...pgTables.keys()].toSorted()).toEqual(
-      [...sqliteTables.keys()].toSorted(),
+    expect(sort([...pgTables.keys()], byString)).toEqual(
+      sort([...sqliteTables.keys()], byString),
     );
     expect(sqliteTables.size).toBeGreaterThan(0);
   });
