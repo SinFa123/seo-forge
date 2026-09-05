@@ -210,9 +210,9 @@ docs/seoforge/
   PLAN.md                                       NEW  (this file)
 
 src/shared/
-  brand.ts                                      NEW  BRAND_NAME and related display constants
-  youtube.ts                                    NEW  row types, column definitions, scoring formulas, confidence enum
-  youtube.test.ts                               NEW  formula tests
+  brand.ts                                      NEW  BRAND_NAME and related display constants (exists)
+  youtube.ts                                    NEW  row types, column definitions, scoring formulas, confidence enum (exists, untested)
+  youtube.test.ts                               NEW  formula tests (not yet written)
 
 src/types/schemas/
   youtube.ts                                    NEW  Zod: research input, videos input, saved keywords, route search params
@@ -604,6 +604,27 @@ Phase 2 exit gate
 - Each server function has been called from the dev server with a real keyword and returned scored rows.
 - `pnpm ci:check` and `pnpm test` pass.
 
+### Phase 2 handover notes (written 2026-09-05 at the pause point)
+
+State when the previous session paused:
+
+- `src/shared/youtube.ts` EXISTS and compiles: row types (`YoutubeKeywordRow`, `YoutubeVideoRow`, `YoutubeResearchOverview`), `YOUTUBE_KEYWORD_COLUMNS`, `YOUTUBE_VIDEO_COLUMNS`, `YOUTUBE_SCORING`, and every formula from section 5 (`normalizeYoutubeKeyword`, `countWords`, `classifyKeywordKind`, `computeViewsPerHour`, `parseRelativePublicationDate`, `median`, `computeChannelMultiplier`, `computeCompetition`, `computeSeedYoutubeShare`, `estimateSearchVolume`, `computeOverallScore`, plus display formatters).
+  It has NO tests yet. Writing `src/shared/youtube.test.ts` is the first task of the next session.
+- `src/types/schemas/youtube.ts` does NOT exist yet.
+  Intended contents, already decided: `researchYoutubeKeywordsSchema` (projectId, keyword 1-200 chars, optional locationCode/languageCode, `serpRowLimit` int 0-200 default 30), `getYoutubeVideosSchema` (keyword, market, `depth` int 20-100 default 20), `youtubeSavedKeywordInputSchema` (keyword, kind, searchVolume, volumeConfidence, competition, overallScore, wordCount), `saveYoutubeKeywordsSchema` (projectId, market, rows 1-500), `getSavedYoutubeKeywordsSchema` (page, pageSize max 200, sort over the saved sort fields, order), `removeSavedYoutubeKeywordsSchema` (savedKeywordIds 1-2000), and `youtubeSearchSchema` for the route (`q`, `loc` coerced number, `lang`, `tab` keywords|videos|saved, `sort`, `order`, `rows` coerced number, `kind`).
+  Also export `Resolved*Input` types the way `src/types/schemas/keywords.ts` does with `ResolvedMarket`.
+- Nothing under `src/server/features/youtube/services/` exists yet.
+  The repository exists.
+- Default `serpRowLimit` was lowered from 50 to 30 to keep a research run under roughly 30 seconds; the constant belongs in the schemas file.
+- knip currently lists the Phase 1 and `shared/youtube.ts` exports as unused.
+  That is expected until the service and MCP tools import them; it clears at the Phase 2 gate.
+- The local dev server from the previous session (port 3011) will not be running; start it with `PORT=3011 pnpm dev` (or `pnpm dev:agents`).
+  Local D1 already has upstream migrations and the YouTube migration applied, and one project "SEO Forge Dev" (example.com, id `cf1e6f1a-ad76-4368-8c60-42b48415be27`) created over MCP for testing.
+- `.env.local` exists with `AUTH_MODE=local_noauth` and the DataForSEO key.
+  `YOUTUBE_DATA_API_KEY` is not set; the user's GCP project has the YouTube Data API disabled.
+- Live DataForSEO sample responses from Phase 1 were saved only in the previous session's scratchpad and are gone; the unit tests carry representative fixtures instead.
+- Upstream sort convention: use `sort` from `remeda` for copies (oxlint forbids `Array#sort`, and `toSorted` is not in the configured TS lib).
+
 ### Phase 3: MCP tools
 
 3.1 Tools.
@@ -802,7 +823,7 @@ Phase 1
 
 Phase 2
 
-- [ ] 2.1 Shared types, schemas, formulas, tests
+- [ ] 2.1 Shared types, schemas, formulas, tests (IN PROGRESS: `src/shared/youtube.ts` written and compiling, no tests; `src/types/schemas/youtube.ts` not written; see Phase 2 handover notes)
 - [ ] 2.2 Candidates
 - [ ] 2.3 Volume estimator
 - [ ] 2.4 Research orchestration
