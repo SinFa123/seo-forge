@@ -69,6 +69,12 @@ import {
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import {
+  getYoutubeVideosTool,
+  listSavedYoutubeKeywordsTool,
+  researchYoutubeKeywordsTool,
+  saveYoutubeKeywordsTool,
+} from "@/server/mcp/tools/youtube-tools";
 import { BRAND_NAME, MCP_SERVER_NAME } from "@/shared/brand";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
@@ -165,6 +171,10 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(listSavedKeywordsTool);
   register(researchKeywordsTool);
   register(saveKeywordsTool);
+  register(researchYoutubeKeywordsTool);
+  register(getYoutubeVideosTool);
+  register(saveYoutubeKeywordsTool);
+  register(listSavedYoutubeKeywordsTool);
   register(getDomainOverviewTool);
   register(getDomainKeywordSuggestionsTool);
   register(getBacklinksOverviewTool);

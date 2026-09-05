@@ -188,6 +188,18 @@ Paths are relative to the repo root.
   Candidate volumes can exceed the seed's because Google Ads reports close-variant groups ("banana bread recipe" anchors far above "banana bread"); Phase 6 calibration is expected to address this.
 - One research run with `serpRowLimit` 3 to 5 took 34 to 41 seconds wall clock on the dev server and cost about 0.20 USD (20 video info calls are 0.12 of that).
 
+### Resolved during Phase 3
+
+- Google Ads search volume live costs 0.09 USD per request (verified 2026-09-05 with a two-keyword request); Trends explore is 0.011 USD per request.
+  One research run at the default `serpRowLimit` (30) is therefore about 0.30 USD: 0.002 seed SERP, 0.12 for 20 video-info calls, 0.022 Trends, 0.09 Google Ads, 0.06 row SERPs.
+- When the DataForSEO balance is exhausted every live call returns HTTP 402 with task status 40200 "Payment Required" and cost 0.
+  Neither upstream's SERP and keywords fetchers nor ours pass a `classify` option to `dataforseoPost`, so the error surfaces as `AppError("INTERNAL_ERROR", "DataForSEO HTTP 402 on <path>")` in both Keyword Research and YouTube Research.
+  A friendlier code would need a new entry in `src/shared/error-codes.ts` and `src/client/lib/error-messages.ts` (upstream files outside the register); left as a question for the user.
+- The account balance hit -0.03 USD at 19:33 on 2026-09-05 after this session's live checks (about 0.50 USD: two research runs, one videos run, one Google Ads price probe).
+  All further live DataForSEO verification is blocked until the user tops up.
+- `tools/list` over `/mcp` returns 50 tools including the four YouTube tools; `tools/call research_youtube_keywords` for a cached seed returned the same `seed`, `rows`, and `fetchedAt` as the server function (parity within the cache window confirmed).
+- `buildProjectMeta` accepts a `params` record, so the tools link to `/p/<id>/youtube?q=<keyword>&tab=videos` and `?tab=saved`, matching `youtubeSearchSchema`.
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
@@ -212,7 +224,7 @@ Paths are relative to the repo root.
 Do not build on these until confirmed.
 Record the answer in section 1 when known.
 
-- DataForSEO prices for Google Trends explore and Google Ads search volume, for the cost table in the UI and the tool descriptions.
+- (none; the Trends and Google Ads prices were resolved on 2026-09-05 and are recorded in section 1)
 
 ## 3. Target structure (living tree)
 
@@ -273,9 +285,9 @@ src/serverFunctions/
   youtube.ts                                    NEW  researchYoutubeKeywords, getYoutubeVideos, saveYoutubeKeywords, getSavedYoutubeKeywords, removeSavedYoutubeKeywords (exists)
 
 src/server/mcp/tools/
-  youtube-tools.ts                              NEW  research_youtube_keywords, get_youtube_videos, save_youtube_keywords, list_saved_youtube_keywords
-  youtube-tools.test.ts                         NEW
-src/server/mcp/server.ts                        EDIT import + register lines
+  youtube-tools.ts                              NEW  research_youtube_keywords, get_youtube_videos, save_youtube_keywords, list_saved_youtube_keywords (exists)
+  youtube-tools.test.ts                         NEW  (exists, 6 tests)
+src/server/mcp/server.ts                        EDIT import + register lines (done)
 
 src/routes/_project/p/$projectId/
   youtube.tsx                                   NEW  validateSearch + page component
@@ -806,26 +818,26 @@ Every upstream file we have modified.
 Keep the line counts honest.
 Target: fewer than fifteen files, each under ten changed lines.
 
-| File                                               | Why                                                        | Lines     | Phase    | Status                    |
-| -------------------------------------------------- | ---------------------------------------------------------- | --------- | -------- | ------------------------- |
-| `src/server/lib/dataforseo/client.ts`              | register youtube and trends fetchers in the metered client | +14       | 1.4      | done                      |
-| `src/server/mcp/server.ts`                         | import and register four tools; brand name and title       | 4 (brand) | 3.2, 0.6 | brand done; tools planned |
-| `src/client/navigation/items.ts`                   | nav entry                                                  |           | 4.2      | planned                   |
-| `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                         |           | 4.4      | planned                   |
-| `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                       |           | 5.2      | planned                   |
-| `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                       | +3        | 1.6      | done                      |
-| `.env.example`                                     | document the key                                           | +6        | 1.6      | done                      |
-| `knip.jsonc`                                       | drizzle youtube configs as entries                         | +3        | 1.8      | done                      |
-| `package.json`                                     | db:youtube scripts                                         | +4        | 1.8      | done                      |
-| `docker-entrypoint.sh`                             | run the youtube migration                                  | +2        | 1.8      | done                      |
-| `.prettierignore`                                  | ignore generated youtube migration metadata                | +3        | 1.8      | done                      |
-| `src/routes/__root.tsx`                            | brand title                                                | 2         | 0.6      | done                      |
-| `src/client/layout/AppShellParts.tsx`              | brand strings                                              | 3         | 0.6      | done                      |
-| `src/client/features/auth/AuthPage.tsx`            | brand alt text                                             | 2         | 0.6      | done                      |
-| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                 | 5         | 0.6      | done                      |
-| `public/site.webmanifest`                          | brand name                                                 | 2         | 0.6      | done                      |
-| `src/client/components/Sidebar.tsx`                | sidebar brand text                                         | 2         | 0.6      | done                      |
-| `src/client/layout/AppShell.tsx`                   | mobile header brand text                                   | 2         | 0.6      | done                      |
+| File                                               | Why                                                        | Lines  | Phase    | Status  |
+| -------------------------------------------------- | ---------------------------------------------------------- | ------ | -------- | ------- |
+| `src/server/lib/dataforseo/client.ts`              | register youtube and trends fetchers in the metered client | +14    | 1.4      | done    |
+| `src/server/mcp/server.ts`                         | import and register four tools; brand name and title       | +10, 4 | 3.2, 0.6 | done    |
+| `src/client/navigation/items.ts`                   | nav entry                                                  |        | 4.2      | planned |
+| `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                         |        | 4.4      | planned |
+| `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                       |        | 5.2      | planned |
+| `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                       | +3     | 1.6      | done    |
+| `.env.example`                                     | document the key                                           | +6     | 1.6      | done    |
+| `knip.jsonc`                                       | drizzle youtube configs as entries                         | +3     | 1.8      | done    |
+| `package.json`                                     | db:youtube scripts                                         | +4     | 1.8      | done    |
+| `docker-entrypoint.sh`                             | run the youtube migration                                  | +2     | 1.8      | done    |
+| `.prettierignore`                                  | ignore generated youtube migration metadata                | +3     | 1.8      | done    |
+| `src/routes/__root.tsx`                            | brand title                                                | 2      | 0.6      | done    |
+| `src/client/layout/AppShellParts.tsx`              | brand strings                                              | 3      | 0.6      | done    |
+| `src/client/features/auth/AuthPage.tsx`            | brand alt text                                             | 2      | 0.6      | done    |
+| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                 | 5      | 0.6      | done    |
+| `public/site.webmanifest`                          | brand name                                                 | 2      | 0.6      | done    |
+| `src/client/components/Sidebar.tsx`                | sidebar brand text                                         | 2      | 0.6      | done    |
+| `src/client/layout/AppShell.tsx`                   | mobile header brand text                                   | 2      | 0.6      | done    |
 
 ## 9. Status
 
@@ -867,9 +879,9 @@ Phase 2
 
 Phase 3
 
-- [ ] 3.1 MCP tools and tests
-- [ ] 3.2 Registration
-- [ ] 3.3 verify-local-mcp pass
+- [x] 3.1 MCP tools and tests (`youtube-tools.ts`, 6 tests: per-seed results and shared columns, video table and Data API hint, language check, save mapping, list defaults, FORBIDDEN before service)
+- [x] 3.2 Registration (`server.ts` +10 lines; `tools/list` shows the four tools with cost and estimate wording)
+- [ ] 3.3 verify-local-mcp pass (protocol smoke done 2026-09-05: tools/list, cached research parity with the server function, videos, empty saved list, failed-seed path; consumer probe status below)
 - [ ] Phase 3 exit gate passed
 
 Phase 4

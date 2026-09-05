@@ -80,7 +80,7 @@ export function meanRecentInterest(
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-export type SeedTrendsInterest = {
+type SeedTrendsInterest = {
   seedInterest: number | null;
   benchmarkInterest: number | null;
 };
