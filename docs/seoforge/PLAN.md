@@ -145,6 +145,35 @@ Paths are relative to the repo root.
 - Local dev uses `.env.local` with `AUTH_MODE=local_noauth` and `DATAFORSEO_API_KEY` as base64 of `login:password`.
 - End-to-end tests are Playwright in `e2e/` with fixtures in `e2e/fixtures/` enabled by `VITE_E2E_KEYWORD_FIXTURES=1`.
 
+### Resolved during Phase 0 and 1.1
+
+- `lucide-react` exports a `Youtube` icon (`node_modules/lucide-react/dist/esm/icons/youtube.js`).
+- drizzle-kit 0.31.10 config accepts `migrations: { table?, schema?, prefix? }`, so the Postgres YouTube stream can use its own tracking table.
+- Alchemy names the D1 database `open-seo-db-<stage>` for non-prod stages (`alchemy.run.ts`, `makeResources`).
+  The D1 migration runner must accept a database name argument for Cloudflare self-host deploys.
+- The video info result item keys are `video_id`, `title`, `url`, `thumbnail_url`, `channel_id`, `channel_name`, `channel_url`, `channel_logo`, `description`, `views_count`, `likes_count`, `comments_count`, `publication_date`, `timestamp`, `duration_time`, `duration_time_seconds`, `is_live`, `is_embeddable`, `category`, `keywords` (array), `channel_subscribers_count` (object with `displayed_count` string and `count` integer), `subtitles`, `streaming_quality`.
+- YouTube suggest: `GET https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&hl=<lang>&gl=<country>&q=<term>` returns JSON `[query, string[] suggestions, [], { "google:suggestsubtypes": ... }]`.
+  Verified live on 2026-09-05 with 10 suggestions for a test query.
+  `client=youtube` returns a JSONP wrapper and is not used.
+- YouTube Data API v3: default quota 10,000 units per day; `channels.list`, `playlistItems.list`, and `videos.list` cost 1 unit each.
+  `search.list` has a separate cap of 100 calls per day and is not used by this feature.
+- The SAM in-app agent bundles every non-internal `.agents/skills/*/SKILL.md` at build time via `import.meta.glob` in `src/server/features/sam/samSkills.ts`.
+  Our skill is picked up automatically; no registration needed.
+- The user's existing GCP API key does not have the YouTube Data API enabled (probe returned 403 "API has not been used in project ... or it is disabled").
+  Enabling it in the GCP console for that project, or creating a dedicated key, is a user action.
+  The feature degrades gracefully without it.
+- Wrangler `d1 execute` supports `--local`, `--remote`, `--file`, `--command`, and `--json`.
+- `drizzle-kit generate` against `src/db/youtube.schema.ts` alone emits only `youtube_saved_keywords` (with the FK to `projects`), not the imported `projects` table.
+  Verified 2026-09-05 for both dialects, so the foreign key stays.
+- `scripts/youtube-migrate-d1.ts` applied `0000_wandering_warhawk` to local D1 and reported nothing to apply on the second run.
+- Live YouTube organic SERP (verified 2026-09-05, cost 0.002 USD, 27 items for `block_depth` 20, all `type: "youtube_video"`): the item `timestamp` is the crawl time, not the publish time, and `publication_date` is a relative string such as "1 year ago".
+  Exact publish time is only available from video info (`timestamp` there is the real publication datetime, e.g. `2025-07-21 12:01:32 +00:00`).
+  Consequence: views per hour is computed from video info for the seed's top videos; row-level freshness for competition uses the relative string bucketed coarsely.
+- Live video info (verified, cost 0.006 USD): keys as documented, `channel_subscribers_count.count` is an integer, `keywords` holds the uploader's tags.
+- Live Google Trends explore (verified): flat cost 0.011 USD per request regardless of keyword count; `item_types` is rejected with "Invalid Field" when more than one keyword is sent, so related queries are only available per single keyword.
+  With two keywords and no `item_types`, only `google_trends_graph` is returned (53 weekly points for `past_12_months`).
+  Consequence: Trends is used only for the seed (one request seed plus benchmark for the share factor, one single-keyword request for related queries), never per candidate.
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
@@ -169,16 +198,6 @@ Paths are relative to the repo root.
 Do not build on these until confirmed.
 Record the answer in section 1 when known.
 
-- Whether `drizzle-kit generate` with a schema file that imports `projects` from `app.schema.ts` for a foreign key, but does not re-export it, emits only our tables.
-  If it also emits `projects`, drop the foreign key constraint and keep `project_id` as an indexed text column instead.
-- How Alchemy names the D1 database in Cloudflare self-host deploys, so our migration runner can target it with `wrangler d1 execute`.
-- Whether `drizzle-kit migrate` for Postgres honours a custom `migrations.table` in the config, so our Postgres stream uses its own tracking table.
-- The exact JSON key names in the video info response (`subscribers_count` numeric field in particular).
-- The YouTube suggest endpoint URL and parameters that return JSON for YouTube (believed to be `https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=<term>` with optional `hl` and `gl`).
-  Confirm response shape and add a Zod schema.
-- YouTube Data API v3 quota costs for `channels.list`, `playlistItems.list`, and `videos.list` (believed to be 1 unit each with a 10,000 unit daily default).
-- Whether the SAM in-app agent (`src/server/features/sam/samSkills.ts`) loads skills from `.agents/skills/` and therefore needs our skill registered anywhere.
-- Whether `lucide-react` in the installed version exports a `Youtube` icon.
 - DataForSEO prices for Google Trends explore and Google Ads search volume, for the cost table in the UI and the tool descriptions.
 
 ## 3. Target structure (living tree)
@@ -274,6 +293,7 @@ src/env.d.ts                                    EDIT YOUTUBE_DATA_API_KEY?: stri
 knip.jsonc                                      EDIT add the two drizzle youtube configs as entries
 package.json                                    EDIT add db:youtube:* scripts; chain into deploy scripts
 docker-entrypoint.sh                            EDIT run db:youtube:migrate:local after db:migrate:local
+.prettierignore                                 EDIT ignore drizzle-youtube/ and drizzle-pg-youtube/
 
 Brand rename (Phase 0):
 src/routes/__root.tsx                           EDIT title
@@ -282,6 +302,8 @@ src/client/features/auth/AuthPage.tsx           EDIT logo alt
 src/client/features/dashboard/McpConnectCard.tsx EDIT copy
 src/server/mcp/server.ts                        EDIT name and title (same file as tool registration)
 public/site.webmanifest                         EDIT name
+src/client/components/Sidebar.tsx               EDIT sidebar brand link text
+src/client/layout/AppShell.tsx                  EDIT mobile header brand link text
 public/transparent-logo.png and favicons        EDIT replace assets if the user supplies a logo; otherwise keep
 ```
 
@@ -293,22 +315,22 @@ Both dialects, structurally identical, names prefixed `youtube_`.
 
 `youtube_saved_keywords`
 
-| Column | Type | Notes |
-| --- | --- | --- |
-| id | text PK | generated id, same helper upstream uses for ids |
-| project_id | text not null | FK to `projects.id` on delete cascade if Phase 1 confirms it is safe; otherwise indexed text |
-| keyword | text not null | normalised lower-case trimmed |
-| location_code | integer not null | |
-| language_code | text not null | |
-| search_volume | integer nullable | estimated |
-| volume_confidence | text nullable | `high`, `medium`, `low` |
-| competition | integer nullable | 0 to 100 |
-| overall_score | integer nullable | 0 to 100 |
-| word_count | integer not null | |
-| kind | text not null | `seed`, `related`, `matching`, `question` |
-| fetched_at | text nullable | when metrics were computed |
-| created_at | text not null | dialect default |
-| updated_at | text not null | dialect default |
+| Column            | Type             | Notes                                                                                        |
+| ----------------- | ---------------- | -------------------------------------------------------------------------------------------- |
+| id                | text PK          | generated id, same helper upstream uses for ids                                              |
+| project_id        | text not null    | FK to `projects.id` on delete cascade if Phase 1 confirms it is safe; otherwise indexed text |
+| keyword           | text not null    | normalised lower-case trimmed                                                                |
+| location_code     | integer not null |                                                                                              |
+| language_code     | text not null    |                                                                                              |
+| search_volume     | integer nullable | estimated                                                                                    |
+| volume_confidence | text nullable    | `high`, `medium`, `low`                                                                      |
+| competition       | integer nullable | 0 to 100                                                                                     |
+| overall_score     | integer nullable | 0 to 100                                                                                     |
+| word_count        | integer not null |                                                                                              |
+| kind              | text not null    | `seed`, `related`, `matching`, `question`                                                    |
+| fetched_at        | text nullable    | when metrics were computed                                                                   |
+| created_at        | text not null    | dialect default                                                                              |
+| updated_at        | text not null    | dialect default                                                                              |
 
 Unique index on `(project_id, keyword, location_code, language_code)`.
 Index on `project_id`.
@@ -324,29 +346,29 @@ They are cached in R2 through upstream's `r2-cache.ts` helpers under our own key
 
 ### Cache namespaces and TTLs
 
-| Namespace | Key inputs | TTL |
-| --- | --- | --- |
-| `youtube:research` | keyword, locationCode, languageCode, serpRowLimit, estimator version | 24 hours |
-| `youtube:videos` | keyword, locationCode, languageCode, depth | 6 hours |
-| `youtube:video-info` | videoId, locationCode, languageCode | 24 hours |
-| `youtube:channel-stats` | channelId | 7 days |
-| `youtube:trends` | sorted keyword batch, locationCode, languageCode | 7 days |
-| `youtube:autocomplete` | term, hl, gl | 7 days |
+| Namespace               | Key inputs                                                           | TTL      |
+| ----------------------- | -------------------------------------------------------------------- | -------- |
+| `youtube:research`      | keyword, locationCode, languageCode, serpRowLimit, estimator version | 24 hours |
+| `youtube:videos`        | keyword, locationCode, languageCode, depth                           | 6 hours  |
+| `youtube:video-info`    | videoId, locationCode, languageCode                                  | 24 hours |
+| `youtube:channel-stats` | channelId                                                            | 7 days   |
+| `youtube:trends`        | sorted keyword batch, locationCode, languageCode                     | 7 days   |
+| `youtube:autocomplete`  | term, hl, gl                                                         | 7 days   |
 
 Every cached value is validated with Zod on read, as upstream does.
 Bump the estimator version constant whenever a formula changes so stale cached scores are recomputed.
 
 ### External calls per keyword research
 
-| Step | Call | Count | Notes |
-| --- | --- | --- | --- |
-| Seed SERP | YouTube organic | 1 | block_depth 20 |
-| Seed video info | YouTube video info | up to 20 | subscriber counts for competition; only for the seed |
-| Candidate generation | YouTube suggest | ~40 | seed, seed + a to z, question prefixes; free |
-| Candidate generation | Google Trends youtube | 1 | related queries top and rising |
-| Volume anchor | Google Ads search volume | 1 | bulk, all candidates in one call |
-| Trends share | Google Trends youtube | ceil(n / 4) | four candidates plus one benchmark per request |
-| Row competition | YouTube organic | serpRowLimit | default 50, user adjustable; SERP-only competition for rows |
+| Step                 | Call                                       | Count        | Notes                                                                                          |
+| -------------------- | ------------------------------------------ | ------------ | ---------------------------------------------------------------------------------------------- |
+| Seed SERP            | YouTube organic                            | 1            | block_depth 20                                                                                 |
+| Seed video info      | YouTube video info                         | up to 20     | exact publish time for views per hour and subscriber counts for competition; only for the seed |
+| Candidate generation | YouTube suggest                            | ~40          | seed, seed + a to z, question prefixes; free                                                   |
+| Candidate generation | Google Trends youtube, seed only           | 1            | related queries top and rising; 0.011 USD                                                      |
+| Volume anchor        | Google Ads search volume                   | 1            | bulk, all candidates in one call                                                               |
+| Trends share         | Google Trends youtube, seed plus benchmark | 1            | graph only; 0.011 USD; the seed's share factor is applied to its candidates with dampening     |
+| Row competition      | YouTube organic                            | serpRowLimit | default 50, user adjustable; SERP-only competition for rows                                    |
 
 Videos tab adds up to 20 Data API channel lookups, each cached 7 days.
 
@@ -400,9 +422,9 @@ Version 1 weights: views 0.40, subscribers 0.25 (redistributed to views when abs
 
 Confidence:
 
-- `high` when both anchor and Trends data exist.
-- `medium` when only the anchor exists.
-- `low` when neither exists; volume is null and the UI shows "< 10".
+- `high` for the seed when both its anchor and its Trends interest exist.
+- `medium` for candidates that have an anchor (their share factor is inherited from the seed, dampened toward the default share), and for the seed when only its anchor exists.
+- `low` when there is no anchor; volume is null and the UI shows "< 10".
 
 The benchmark keyword and its known estimate are constants set in Phase 6.
 
@@ -429,11 +451,11 @@ Each step lists the reference files to read first, the deliverable, and the chec
 ### Phase 0: Fork, checkout, tooling, brand
 
 0.1 Fork `every-app/open-seo` to the user's GitHub account and name the fork `seo-forge`.
-    Deliverable: fork exists.
-    Check: `gh repo view <user>/seo-forge`.
+Deliverable: fork exists.
+Check: `gh repo view <user>/seo-forge`.
 
 0.2 Check the fork out in place, since this directory already holds `docs/seoforge/`.
-    ```sh
+`sh
     cd ~/projects/seo-forge
     git init
     git remote add origin git@github.com:<user>/seo-forge.git
@@ -442,36 +464,37 @@ Each step lists the reference files to read first, the deliverable, and the chec
     git checkout -b main origin/main
     git checkout -b seo-forge
     git add docs/seoforge && git commit -m "docs: add SEO Forge goal and plan"
-    ```
-    `main` mirrors upstream and is never committed to.
-    All work happens on `seo-forge`.
-    Check: `git log --oneline -1 upstream/main` matches `origin/main`.
+    `
+`main` mirrors upstream and is never committed to.
+All work happens on `seo-forge`.
+Check: `git log --oneline -1 upstream/main` matches `origin/main`.
 
 0.3 Enable Corepack and install dependencies.
-    Requires the user's explicit approval in the session before running.
-    ```sh
+Requires the user's explicit approval in the session before running.
+`sh
     corepack enable
     pnpm install --frozen-lockfile
-    ```
-    Check: `pnpm --version` matches `packageManager` in `package.json`.
+    `
+Check: `pnpm --version` matches `packageManager` in `package.json`.
 
 0.4 Local environment.
-    Copy `.env.example` to `.env.local`, set `AUTH_MODE=local_noauth` and `DATAFORSEO_API_KEY`.
-    Run `pnpm run db:migrate:local`, then `pnpm dev:agents`.
-    Check: the app loads and Keyword Research returns rows for a test keyword.
+Copy `.env.example` to `.env.local`, set `AUTH_MODE=local_noauth` and `DATAFORSEO_API_KEY`.
+Run `pnpm run db:migrate:local`, then `pnpm dev:agents`.
+Check: the app loads and Keyword Research returns rows for a test keyword.
 
 0.5 Baseline checks before any change.
-    Run `pnpm ci:check` and `pnpm test`.
-    Record any pre-existing failures here so they are not mistaken for ours.
+Run `pnpm ci:check` and `pnpm test`.
+Record any pre-existing failures here so they are not mistaken for ours.
 
 0.6 Brand rename.
-    Reference: the files in the Brand rename block of section 3.
-    Create `src/shared/brand.ts` exporting `BRAND_NAME = "SEO Forge"` and `MCP_SERVER_NAME = "SEO Forge MCP"`.
-    Replace only the listed user-facing strings with the constant.
-    Update `public/site.webmanifest` name fields.
-    Check: browser tab, sidebar, auth page, dashboard MCP card, and `tools/list` server info show SEO Forge; `grep -rn OpenSEO src/client/layout src/routes/__root.tsx` returns nothing.
+Reference: the files in the Brand rename block of section 3.
+Create `src/shared/brand.ts` exporting `BRAND_NAME = "SEO Forge"` and `MCP_SERVER_NAME = "SEO Forge MCP"`.
+Replace only the listed user-facing strings with the constant.
+Update `public/site.webmanifest` name fields.
+Check: browser tab, sidebar, auth page, dashboard MCP card, and `tools/list` server info show SEO Forge; `grep -rn OpenSEO src/client/layout src/routes/__root.tsx` returns nothing.
 
 Phase 0 exit gate
+
 - `pnpm ci:check` and `pnpm test` pass (or pre-existing failures are recorded in 0.5).
 - Dev server runs and Keyword Research returns rows.
 - Brand shows as SEO Forge in the browser tab, sidebar, auth page, dashboard MCP card, and MCP `tools/list` server info.
@@ -479,57 +502,58 @@ Phase 0 exit gate
 ### Phase 1: Data layer
 
 1.1 Resolve the open items in section 2 that affect this phase (drizzle-kit FK behaviour, Postgres migrations table, Alchemy D1 naming, video info key names).
-    Record answers in section 1.
+Record answers in section 1.
 
 1.2 DataForSEO YouTube wrappers.
-    Reference: `src/server/lib/dataforseo/serp.ts` (`fetchLiveSerp`), `envelope.ts`, `core.ts`.
-    Create `src/server/lib/dataforseo/youtube.ts` with `fetchYoutubeSerp` and `fetchYoutubeVideoInfo`, each with a Zod item schema and returning `DataforseoApiResponse<T>`.
-    Check: unit tests with recorded sample responses parse; a live call in dev returns 20 items for a common keyword.
+Reference: `src/server/lib/dataforseo/serp.ts` (`fetchLiveSerp`), `envelope.ts`, `core.ts`.
+Create `src/server/lib/dataforseo/youtube.ts` with `fetchYoutubeSerp` and `fetchYoutubeVideoInfo`, each with a Zod item schema and returning `DataforseoApiResponse<T>`.
+Check: unit tests with recorded sample responses parse; a live call in dev returns 20 items for a common keyword.
 
 1.3 Google Trends wrapper.
-    Create `src/server/lib/dataforseo/google-trends.ts` with `fetchGoogleTrendsExplore({ keywords, locationCode, languageCode, type: "youtube", itemTypes })`.
-    Enforce the five keyword limit in the input schema.
-    Check: live call returns a graph and a queries list for a popular keyword and 0 values for a nonsense keyword.
+Create `src/server/lib/dataforseo/google-trends.ts` with `fetchGoogleTrendsExplore({ keywords, locationCode, languageCode, type: "youtube", itemTypes })`.
+Enforce the five keyword limit in the input schema.
+Check: live call returns a graph and a queries list for a popular keyword and 0 values for a nonsense keyword.
 
 1.4 Register the new fetchers in the metered client.
-    Edit `src/server/lib/dataforseo/client.ts`: add `youtube: { serp: meter(customer, fetchYoutubeSerp), videoInfo: meter(customer, fetchYoutubeVideoInfo) }` and `trends: { explore: meter(customer, fetchGoogleTrendsExplore) }`.
-    Record in section 8.
-    Check: `pnpm types:check` passes.
+Edit `src/server/lib/dataforseo/client.ts`: add `youtube: { serp: meter(customer, fetchYoutubeSerp), videoInfo: meter(customer, fetchYoutubeVideoInfo) }` and `trends: { explore: meter(customer, fetchGoogleTrendsExplore) }`.
+Record in section 8.
+Check: `pnpm types:check` passes.
 
 1.5 YouTube suggest client.
-    Create `src/server/lib/youtubeAutocompleteClient.ts` with a Zod schema for the response and a function returning `string[]`.
-    Treat failures as an empty list with a logged warning so a broken unofficial endpoint degrades rather than fails research.
-    Check: unit test with a recorded response; live call returns suggestions.
+Create `src/server/lib/youtubeAutocompleteClient.ts` with a Zod schema for the response and a function returning `string[]`.
+Treat failures as an empty list with a logged warning so a broken unofficial endpoint degrades rather than fails research.
+Check: unit test with a recorded response; live call returns suggestions.
 
 1.6 YouTube Data API client.
-    Create `src/server/lib/youtubeDataApiClient.ts` with `getChannelRecentUploadStats(channelId)` returning view counts of the last 20 uploads.
-    Read the key from the runtime environment.
-    Return a typed "not configured" result when the key is unset.
-    Check: unit tests for the unconfigured path and a parsed sample; live call for a known channel.
+Create `src/server/lib/youtubeDataApiClient.ts` with `getChannelRecentUploadStats(channelId)` returning view counts of the last 20 uploads.
+Read the key from the runtime environment.
+Return a typed "not configured" result when the key is unset.
+Check: unit tests for the unconfigured path and a parsed sample; live call for a known channel.
 
 1.7 Schema.
-    Reference: `src/db/gsc.schema.ts`, `src/db/pg/gsc.schema.ts`, `src/db/schema.ts`, `src/db/schema-parity.test.ts`.
-    Create `src/db/youtube.schema.ts`, `src/db/pg/youtube.schema.ts`, `src/db/youtube/schema.ts`, and `src/db/youtube/schema-parity.test.ts`.
-    Do not add the YouTube schema to upstream barrels.
-    Check: parity test passes.
+Reference: `src/db/gsc.schema.ts`, `src/db/pg/gsc.schema.ts`, `src/db/schema.ts`, `src/db/schema-parity.test.ts`.
+Create `src/db/youtube.schema.ts`, `src/db/pg/youtube.schema.ts`, `src/db/youtube/schema.ts`, and `src/db/youtube/schema-parity.test.ts`.
+Do not add the YouTube schema to upstream barrels.
+Check: parity test passes.
 
 1.8 Separate migration stream.
-    Create `drizzle-youtube.config.ts` and `drizzle-pg-youtube.config.ts` pointing at the YouTube schema files with `out` directories `drizzle-youtube` and `drizzle-pg-youtube`.
-    Create `scripts/youtube-migrate-d1.ts` (tsx, like other scripts) that reads `drizzle-youtube/meta/_journal.json`, lists applied names from `youtube_migrations` via `wrangler d1 execute DB --json`, applies missing SQL files with `--file`, and records them.
-    Accept `--local` or `--remote` and an optional database name for Alchemy deploys.
-    Add scripts to `package.json`: `db:youtube:generate`, `db:youtube:migrate:local`, `db:youtube:migrate:prod`, `db:youtube:migrate:pg`.
-    Chain `db:youtube:migrate:local` into `docker-entrypoint.sh` after `db:migrate:local`.
-    Add the two configs to `knip.jsonc` entries.
-    Record all edits in section 8.
-    Check: `pnpm db:youtube:generate` emits only `youtube_*` tables; `pnpm db:youtube:migrate:local` is idempotent on a second run.
+Create `drizzle-youtube.config.ts` and `drizzle-pg-youtube.config.ts` pointing at the YouTube schema files with `out` directories `drizzle-youtube` and `drizzle-pg-youtube`.
+Create `scripts/youtube-migrate-d1.ts` (tsx, like other scripts) that reads `drizzle-youtube/meta/_journal.json`, lists applied names from `youtube_migrations` via `wrangler d1 execute DB --json`, applies missing SQL files with `--file`, and records them.
+Accept `--local` or `--remote` and an optional database name for Alchemy deploys.
+Add scripts to `package.json`: `db:youtube:generate`, `db:youtube:migrate:local`, `db:youtube:migrate:prod`, `db:youtube:migrate:pg`.
+Chain `db:youtube:migrate:local` into `docker-entrypoint.sh` after `db:migrate:local`.
+Add the two configs to `knip.jsonc` entries.
+Record all edits in section 8.
+Check: `pnpm db:youtube:generate` emits only `youtube_*` tables; `pnpm db:youtube:migrate:local` is idempotent on a second run.
 
 1.9 Repository.
-    Reference: `src/server/features/keywords/repositories/KeywordResearchRepository.ts`.
-    Create `YoutubeSavedKeywordsRepository.ts` importing tables from `@/db/youtube/schema` and `db` from `@/db`.
-    Functions: `upsertMany`, `list` with sort and pagination, `removeByIds`.
-    Check: tested through the service in Phase 2.
+Reference: `src/server/features/keywords/repositories/KeywordResearchRepository.ts`.
+Create `YoutubeSavedKeywordsRepository.ts` importing tables from `@/db/youtube/schema` and `db` from `@/db`.
+Functions: `upsertMany`, `list` with sort and pagination, `removeByIds`.
+Check: tested through the service in Phase 2.
 
 Phase 1 exit gate
+
 - Unit tests exist for every new client (`youtube.ts`, `google-trends.ts`, suggest, Data API) using recorded sample responses, and for the parity test.
 - One live call per DataForSEO wrapper has been made from the dev server and the parsed shape matches the Zod schema.
 - `pnpm db:youtube:generate` emits only `youtube_*` tables and `pnpm db:youtube:migrate:local` is idempotent.
@@ -539,40 +563,41 @@ Phase 1 exit gate
 ### Phase 2: Shared contracts and service
 
 2.1 Shared types, schemas, and formulas.
-    Reference: `src/types/keywords.ts`, `src/types/schemas/keywords.ts`, `src/shared/researchScope.ts` for the shared constants style.
-    Create `src/shared/youtube.ts` with `YoutubeKeywordRow`, `YoutubeVideoRow`, `YOUTUBE_KEYWORD_COLUMNS`, `YOUTUBE_VIDEO_COLUMNS`, `YOUTUBE_SCORING`, and the formula functions from section 5.
-    Create `src/types/schemas/youtube.ts` with `researchYoutubeKeywordsSchema`, `getYoutubeVideosSchema`, `saveYoutubeKeywordsSchema`, `getSavedYoutubeKeywordsSchema`, `removeSavedYoutubeKeywordsSchema`, and `youtubeSearchSchema` for route params.
-    Check: `src/shared/youtube.test.ts` covers each formula's boundaries and the classifier.
+Reference: `src/types/keywords.ts`, `src/types/schemas/keywords.ts`, `src/shared/researchScope.ts` for the shared constants style.
+Create `src/shared/youtube.ts` with `YoutubeKeywordRow`, `YoutubeVideoRow`, `YOUTUBE_KEYWORD_COLUMNS`, `YOUTUBE_VIDEO_COLUMNS`, `YOUTUBE_SCORING`, and the formula functions from section 5.
+Create `src/types/schemas/youtube.ts` with `researchYoutubeKeywordsSchema`, `getYoutubeVideosSchema`, `saveYoutubeKeywordsSchema`, `getSavedYoutubeKeywordsSchema`, `removeSavedYoutubeKeywordsSchema`, and `youtubeSearchSchema` for route params.
+Check: `src/shared/youtube.test.ts` covers each formula's boundaries and the classifier.
 
 2.2 Candidate generation.
-    Create `services/research/candidates.ts`: expand the seed through suggest, merge Trends related queries, de-duplicate, normalise, classify.
-    Cap at a configurable maximum (default 200) before hydration.
-    Check: unit test with mocked clients yields deterministic classified output.
+Create `services/research/candidates.ts`: expand the seed through suggest, merge Trends related queries, de-duplicate, normalise, classify.
+Cap at a configurable maximum (default 200) before hydration.
+Check: unit test with mocked clients yields deterministic classified output.
 
 2.3 Volume estimator.
-    Create `services/research/volume.ts` implementing section 5 with batching of Trends requests (four candidates plus the benchmark).
-    Check: unit tests for high, medium, and low confidence paths.
+Create `services/research/volume.ts` implementing section 5 with batching of Trends requests (four candidates plus the benchmark).
+Check: unit tests for high, medium, and low confidence paths.
 
 2.4 Research orchestration.
-    Reference: `src/server/features/keywords/services/research/research.ts` for the cache pattern.
-    Create `services/research/research.ts`: cache lookup, seed SERP and video info, candidates, Google Ads anchor in one bulk call, Trends share, row SERPs up to `serpRowLimit`, scoring, cache write.
-    Return `{ seed: YoutubeKeywordRow, rows: YoutubeKeywordRow[], seedVideos summary, diagnostics, fetchedAt }`.
-    Check: unit test with mocked metered client verifies call counts match section 4 and that the cache short-circuits.
+Reference: `src/server/features/keywords/services/research/research.ts` for the cache pattern.
+Create `services/research/research.ts`: cache lookup, seed SERP and video info, candidates, Google Ads anchor in one bulk call, Trends share, row SERPs up to `serpRowLimit`, scoring, cache write.
+Return `{ seed: YoutubeKeywordRow, rows: YoutubeKeywordRow[], seedVideos summary, diagnostics, fetchedAt }`.
+Check: unit test with mocked metered client verifies call counts match section 4 and that the cache short-circuits.
 
 2.5 Videos orchestration.
-    Create `services/research/videos.ts`: seed SERP, video info per result, channel stats via the Data API when configured, views per hour and multiplier.
-    Check: unit tests for configured and unconfigured Data API.
+Create `services/research/videos.ts`: seed SERP, video info per result, channel stats via the Data API when configured, views per hour and multiplier.
+Check: unit tests for configured and unconfigured Data API.
 
 2.6 Saved keywords service and public service object.
-    Create `services/saved-keywords.ts` and `services/YoutubeResearchService.ts` as an `as const` object.
-    Check: service tests for save, list, and remove through the repository against the local D1.
+Create `services/saved-keywords.ts` and `services/YoutubeResearchService.ts` as an `as const` object.
+Check: service tests for save, list, and remove through the repository against the local D1.
 
 2.7 Server functions.
-    Reference: `src/serverFunctions/keywords.ts`.
-    Create `src/serverFunctions/youtube.ts` with the five functions, each `.middleware(requireProjectContext).validator(schema)` and calling the service with `resolveMarket`.
-    Check: `pnpm types:check`; a manual call from the dev server works.
+Reference: `src/serverFunctions/keywords.ts`.
+Create `src/serverFunctions/youtube.ts` with the five functions, each `.middleware(requireProjectContext).validator(schema)` and calling the service with `resolveMarket`.
+Check: `pnpm types:check`; a manual call from the dev server works.
 
 Phase 2 exit gate
+
 - `src/shared/youtube.test.ts` covers every formula boundary and the classifier.
 - Service tests with mocked clients assert the call counts in section 4 and that the cache short-circuits.
 - Saved keyword service tests pass against local D1.
@@ -582,24 +607,25 @@ Phase 2 exit gate
 ### Phase 3: MCP tools
 
 3.1 Tools.
-    Reference: `src/server/mcp/tools/research-keywords.ts`, `saved-keywords-tools.ts`, `table.ts`, `output-schemas.ts`, `schemas.ts`.
-    Create `src/server/mcp/tools/youtube-tools.ts` with four tools.
-    `research_youtube_keywords`: 1 to 5 seeds, per-seed ok or error, `serpRowLimit` option, text table built from `YOUTUBE_KEYWORD_COLUMNS`, description states costs and that volume is estimated with a confidence column.
-    `get_youtube_videos`: keyword, optional depth, text table from `YOUTUBE_VIDEO_COLUMNS`, thumbnail URL included in rows.
-    `save_youtube_keywords` and `list_saved_youtube_keywords` mirroring upstream's saved keyword tools.
-    Annotations follow upstream (`readOnlyHint` false for paid research, true for list).
-    Check: `youtube-tools.test.ts` using `makeToolContext` and `textContent` covers a happy path and one failure per tool.
+Reference: `src/server/mcp/tools/research-keywords.ts`, `saved-keywords-tools.ts`, `table.ts`, `output-schemas.ts`, `schemas.ts`.
+Create `src/server/mcp/tools/youtube-tools.ts` with four tools.
+`research_youtube_keywords`: 1 to 5 seeds, per-seed ok or error, `serpRowLimit` option, text table built from `YOUTUBE_KEYWORD_COLUMNS`, description states costs and that volume is estimated with a confidence column.
+`get_youtube_videos`: keyword, optional depth, text table from `YOUTUBE_VIDEO_COLUMNS`, thumbnail URL included in rows.
+`save_youtube_keywords` and `list_saved_youtube_keywords` mirroring upstream's saved keyword tools.
+Annotations follow upstream (`readOnlyHint` false for paid research, true for list).
+Check: `youtube-tools.test.ts` using `makeToolContext` and `textContent` covers a happy path and one failure per tool.
 
 3.2 Register.
-    Edit `src/server/mcp/server.ts` to import and `register` the four tools.
-    Record in section 8.
-    Check: `tools/list` over `/mcp` shows the four tools.
+Edit `src/server/mcp/server.ts` to import and `register` the four tools.
+Record in section 8.
+Check: `tools/list` over `/mcp` shows the four tools.
 
 3.3 Verify end to end.
-    Follow `.agents/skills/verify-local-mcp/SKILL.md`: protocol smoke with curl, then the headless consumer probe with a natural YouTube research task.
-    Act on ergonomics feedback before moving on.
+Follow `.agents/skills/verify-local-mcp/SKILL.md`: protocol smoke with curl, then the headless consumer probe with a natural YouTube research task.
+Act on ergonomics feedback before moving on.
 
 Phase 3 exit gate
+
 - `youtube-tools.test.ts` covers a happy path and one failure per tool.
 - `tools/list` over `/mcp` shows the four tools with descriptions that state costs and the estimated nature of volume.
 - The `verify-local-mcp` protocol smoke and headless consumer probe have both been run and their feedback acted on.
@@ -609,44 +635,45 @@ Phase 3 exit gate
 ### Phase 4: UI
 
 4.1 Route and search params.
-    Reference: `src/routes/_project/p/$projectId/keywords.tsx`, `src/client/features/keywords/keywordSearchParams.ts`.
-    Create `src/routes/_project/p/$projectId/youtube.tsx` validating `q`, `loc`, `lang`, `tab` (`keywords` | `videos` | `saved`), `sort`, `order`, `rows` with `youtubeSearchSchema`.
-    Check: route appears in the generated tree; unknown params are dropped.
+Reference: `src/routes/_project/p/$projectId/keywords.tsx`, `src/client/features/keywords/keywordSearchParams.ts`.
+Create `src/routes/_project/p/$projectId/youtube.tsx` validating `q`, `loc`, `lang`, `tab` (`keywords` | `videos` | `saved`), `sort`, `order`, `rows` with `youtubeSearchSchema`.
+Check: route appears in the generated tree; unknown params are dropped.
 
 4.2 Navigation.
-    Edit `src/client/navigation/items.ts` to add "YouTube Research" pointing at `/p/$projectId/youtube` with the lucide `Youtube` icon (confirm export first).
-    Record in section 8.
+Edit `src/client/navigation/items.ts` to add "YouTube Research" pointing at `/p/$projectId/youtube` with the lucide `Youtube` icon (confirm export first).
+Record in section 8.
 
 4.3 Data hooks.
-    Reference: `src/client/features/keywords/hooks/useKeywordResearchData.ts`.
-    Create the three hooks with query keys that include project id and every input, 24 hour stale time for research, 6 hours for videos, and `enabled` gating so no paid query fires without a keyword.
+Reference: `src/client/features/keywords/hooks/useKeywordResearchData.ts`.
+Create the three hooks with query keys that include project id and every input, 24 hour stale time for research, 6 hours for videos, and `enabled` gating so no paid query fires without a keyword.
 
 4.4 Page and sub-tabs.
-    Reference: `KeywordResearchPage.tsx`, `KeywordResearchSearchBar.tsx`, `SegmentedToggle.tsx`, `LocationSelect.tsx`.
-    Create `YoutubeResearchPage.tsx` with the search bar, overview cards, a segmented toggle for the three sub-tabs driven by the `tab` search param, and the results area.
-    Recent searches: edit `src/client/features/search-tabs/types.ts` to add `YoutubeSearchTabInput` and use `useSearchTabNavigation` with storage key `youtube:<projectId>`.
-    Record in section 8.
+Reference: `KeywordResearchPage.tsx`, `KeywordResearchSearchBar.tsx`, `SegmentedToggle.tsx`, `LocationSelect.tsx`.
+Create `YoutubeResearchPage.tsx` with the search bar, overview cards, a segmented toggle for the three sub-tabs driven by the `tab` search param, and the results area.
+Recent searches: edit `src/client/features/search-tabs/types.ts` to add `YoutubeSearchTabInput` and use `useSearchTabNavigation` with storage key `youtube:<projectId>`.
+Record in section 8.
 
 4.5 Keywords table.
-    Reference: `KeywordResearchDesktopTable.tsx`, `KeywordResearchMobileResults.tsx`, `AppDataTable.tsx`.
-    Build columns from `YOUTUBE_KEYWORD_COLUMNS`.
-    Volume cell shows the number with a `ConfidenceBadge`; low confidence shows "< 10".
-    Kind filter chips: all, related, matching, questions.
-    Row selection and a Save action calling `saveYoutubeKeywords`.
+Reference: `KeywordResearchDesktopTable.tsx`, `KeywordResearchMobileResults.tsx`, `AppDataTable.tsx`.
+Build columns from `YOUTUBE_KEYWORD_COLUMNS`.
+Volume cell shows the number with a `ConfidenceBadge`; low confidence shows "< 10".
+Kind filter chips: all, related, matching, questions.
+Row selection and a Save action calling `saveYoutubeKeywords`.
 
 4.6 Videos grid.
-    Thumbnail, title linking out via `SafeExternalLink`, channel, published, views, views per hour, multiplier badge, duration, Shorts marker.
-    Setup hint when the Data API key is unset.
+Thumbnail, title linking out via `SafeExternalLink`, channel, published, views, views per hour, multiplier badge, duration, Shorts marker.
+Setup hint when the Data API key is unset.
 
 4.7 Saved sub-tab.
-    List, sort, remove.
+List, sort, remove.
 
 4.8 End to end.
-    Reference: `e2e/keyword-research-navigation.spec.ts`, `e2e/fixtures/keyword-research-fixtures.ts`, and the fixture flag in `src/serverFunctions/keywords.ts`.
-    Add `VITE_E2E_YOUTUBE_FIXTURES` handling in `src/serverFunctions/youtube.ts`, fixtures, and a spec covering search, sub-tab switching via URL, and save.
-    Visual pass against upstream's Keyword Research page for spacing, typography, and states.
+Reference: `e2e/keyword-research-navigation.spec.ts`, `e2e/fixtures/keyword-research-fixtures.ts`, and the fixture flag in `src/serverFunctions/keywords.ts`.
+Add `VITE_E2E_YOUTUBE_FIXTURES` handling in `src/serverFunctions/youtube.ts`, fixtures, and a spec covering search, sub-tab switching via URL, and save.
+Visual pass against upstream's Keyword Research page for spacing, typography, and states.
 
 Phase 4 exit gate
+
 - Playwright spec passes with fixtures: search, sub-tab switching by URL, save, remove.
 - Side-by-side visual review against Keyword Research on desktop and mobile, including loading, empty, error, and unconfigured Data API states; differences fixed.
 - UI numbers for a keyword match the MCP tool output for the same inputs.
@@ -655,17 +682,18 @@ Phase 4 exit gate
 ### Phase 5: Agent skill
 
 5.1 Skill.
-    Reference: `.agents/skills/keyword-research/SKILL.md`.
-    Create `.agents/skills/youtube-research/SKILL.md` with goal, required inputs, project context steps (reuse `get_project_context`, research log entries), the four MCP tools, workflow, output table with the same columns as the UI, and guardrails: volume is estimated, report confidence, never save without confirmation, keep `serpRowLimit` small unless asked.
+Reference: `.agents/skills/keyword-research/SKILL.md`.
+Create `.agents/skills/youtube-research/SKILL.md` with goal, required inputs, project context steps (reuse `get_project_context`, research log entries), the four MCP tools, workflow, output table with the same columns as the UI, and guardrails: volume is estimated, report confidence, never save without confirmation, keep `serpRowLimit` small unless asked.
 
 5.2 Publish in the plugin.
-    Edit `scripts/sync-plugin-skills.mjs` to add `youtube-research`, run `pnpm sync-plugin-skills`.
-    Record in section 8.
-    Check: `pnpm ci:check` passes with a clean plugin diff.
+Edit `scripts/sync-plugin-skills.mjs` to add `youtube-research`, run `pnpm sync-plugin-skills`.
+Record in section 8.
+Check: `pnpm ci:check` passes with a clean plugin diff.
 
 5.3 Resolve the SAM skills open item and register the skill there if applicable.
 
 Phase 5 exit gate
+
 - A headless agent given only the skill and the MCP completes a YouTube research task and its output table matches the skill's column order.
 - `pnpm sync-plugin-skills` leaves a clean plugin diff and `pnpm ci:check` passes.
 
@@ -678,6 +706,7 @@ Phase 5 exit gate
 6.3 Update the constants, bump `ESTIMATOR_VERSION`, re-run tests, and record the achieved median ratio and rank correlation here.
 
 Phase 6 exit gate
+
 - Calibration results (median ratio to VidIQ, rank correlation) recorded in this file.
 - `ESTIMATOR_VERSION` bumped, formula tests updated, `pnpm test` passes.
 
@@ -688,6 +717,7 @@ Phase 6 exit gate
 7.2 Add a short self-hosting note for the YouTube Data API key next to upstream's Google docs, in `docs/seoforge/`, not in upstream's docs folder.
 
 Phase 7 exit gate
+
 - A full upstream sync per section 7 has been performed once on the finished branch and the register in section 8 matched the actual conflicts.
 - `pnpm ci:check`, `pnpm test`, and `pnpm test:e2e` pass after the sync.
 
@@ -722,50 +752,56 @@ Every upstream file we have modified.
 Keep the line counts honest.
 Target: fewer than fifteen files, each under ten changed lines.
 
-| File | Why | Lines | Phase | Status |
-| --- | --- | --- | --- | --- |
-| `src/server/lib/dataforseo/client.ts` | register youtube and trends fetchers in the metered client | | 1.4 | planned |
-| `src/server/mcp/server.ts` | import and register four tools; brand name and title | | 3.2, 0.6 | planned |
-| `src/client/navigation/items.ts` | nav entry | | 4.2 | planned |
-| `src/client/features/search-tabs/types.ts` | YoutubeSearchTabInput in the union | | 4.4 | planned |
-| `scripts/sync-plugin-skills.mjs` | add youtube-research | | 5.2 | planned |
-| `src/env.d.ts` | YOUTUBE_DATA_API_KEY | | 1.6 | planned |
-| `.env.example` | document the key | | 1.6 | planned |
-| `knip.jsonc` | drizzle youtube configs as entries | | 1.8 | planned |
-| `package.json` | db:youtube scripts | | 1.8 | planned |
-| `docker-entrypoint.sh` | run the youtube migration | | 1.8 | planned |
-| `src/routes/__root.tsx` | brand title | | 0.6 | planned |
-| `src/client/layout/AppShellParts.tsx` | brand strings | | 0.6 | planned |
-| `src/client/features/auth/AuthPage.tsx` | brand alt text | | 0.6 | planned |
-| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy | | 0.6 | planned |
-| `public/site.webmanifest` | brand name | | 0.6 | planned |
+| File                                               | Why                                                        | Lines     | Phase    | Status                    |
+| -------------------------------------------------- | ---------------------------------------------------------- | --------- | -------- | ------------------------- |
+| `src/server/lib/dataforseo/client.ts`              | register youtube and trends fetchers in the metered client | +14       | 1.4      | done                      |
+| `src/server/mcp/server.ts`                         | import and register four tools; brand name and title       | 4 (brand) | 3.2, 0.6 | brand done; tools planned |
+| `src/client/navigation/items.ts`                   | nav entry                                                  |           | 4.2      | planned                   |
+| `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                         |           | 4.4      | planned                   |
+| `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                       |           | 5.2      | planned                   |
+| `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                       | +3        | 1.6      | done                      |
+| `.env.example`                                     | document the key                                           | +6        | 1.6      | done                      |
+| `knip.jsonc`                                       | drizzle youtube configs as entries                         | +3        | 1.8      | done                      |
+| `package.json`                                     | db:youtube scripts                                         | +4        | 1.8      | done                      |
+| `docker-entrypoint.sh`                             | run the youtube migration                                  | +2        | 1.8      | done                      |
+| `.prettierignore`                                  | ignore generated youtube migration metadata                | +3        | 1.8      | done                      |
+| `src/routes/__root.tsx`                            | brand title                                                | 2         | 0.6      | done                      |
+| `src/client/layout/AppShellParts.tsx`              | brand strings                                              | 3         | 0.6      | done                      |
+| `src/client/features/auth/AuthPage.tsx`            | brand alt text                                             | 2         | 0.6      | done                      |
+| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                 | 5         | 0.6      | done                      |
+| `public/site.webmanifest`                          | brand name                                                 | 2         | 0.6      | done                      |
+| `src/client/components/Sidebar.tsx`                | sidebar brand text                                         | 2         | 0.6      | done                      |
+| `src/client/layout/AppShell.tsx`                   | mobile header brand text                                   | 2         | 0.6      | done                      |
 
 ## 9. Status
 
 Tick when done and note the commit.
 
 Phase 0
-- [ ] 0.1 Fork created as `seo-forge`
-- [ ] 0.2 Checked out in place, `main` mirrors upstream, `seo-forge` branch created, docs committed
-- [ ] 0.3 Corepack and pnpm install (user approved)
-- [ ] 0.4 Local env and dev server running
-- [ ] 0.5 Baseline `ci:check` and `test` recorded
-- [ ] 0.6 Brand rename
-- [ ] Phase 0 exit gate passed
+
+- [x] 0.1 Fork created as `seo-forge` (https://github.com/SinFa123/seo-forge)
+- [x] 0.2 Checked out in place, `main` mirrors upstream, `seo-forge` branch created, docs committed (37ab433)
+- [x] 0.3 Corepack shims in `~/.local/bin`, pnpm 10.30.1, `pnpm install --frozen-lockfile` (user approved 2026-09-05)
+- [x] 0.4 `.env.local` (local_noauth + DataForSEO key), D1 migrated, dev server on port 3011, `research_keywords` over MCP returned 87 rows
+- [x] 0.5 Baseline on upstream 3632f40: `types:check` clean, `lint` 0 warnings, `test:ci` 138 files / 1165 tests pass; `format:check` only flagged our own new files
+- [x] 0.6 Brand rename via `src/shared/brand.ts`; SSR `<title>SEO Forge</title>` and MCP serverInfo `SEO Forge MCP` verified on the dev server
+- [x] Phase 0 exit gate passed (types, lint, 1165 tests, format after prettier on our files)
 
 Phase 1
-- [ ] 1.1 Open items resolved and recorded
-- [ ] 1.2 DataForSEO YouTube wrappers
-- [ ] 1.3 Google Trends wrapper
-- [ ] 1.4 Metered client registration
-- [ ] 1.5 Suggest client
-- [ ] 1.6 Data API client and env
-- [ ] 1.7 Schema and parity test
-- [ ] 1.8 Separate migration stream and runner
-- [ ] 1.9 Repository
-- [ ] Phase 1 exit gate passed
+
+- [x] 1.1 Open items resolved and recorded (drizzle-kit FK behaviour still pending, checked in 1.7/1.8)
+- [x] 1.2 DataForSEO YouTube wrappers (`youtube.ts`, 4 tests, live SERP + video info verified)
+- [x] 1.3 Google Trends wrapper (`google-trends.ts`, 4 tests, live verified incl. item_types constraint)
+- [x] 1.4 Metered client registration (`client.ts` youtube + trends sections)
+- [x] 1.5 Suggest client (`youtubeAutocompleteClient.ts`, 3 tests, endpoint verified live)
+- [x] 1.6 Data API client and env (`youtubeDataApiClient.ts`, 3 tests; user's GCP project has the API disabled, so no live call yet)
+- [x] 1.7 Schema and parity test (`youtube.schema.ts`, `pg/youtube.schema.ts`, `youtube/schema.ts` barrel, parity test 2 tests)
+- [x] 1.8 Separate migration stream and runner (`drizzle-youtube/0000_*`, `drizzle-pg-youtube/0000_*`, `scripts/youtube-migrate-d1.ts` idempotent locally)
+- [x] 1.9 Repository (`YoutubeSavedKeywordsRepository.ts`: upsertMany, list, listByIds, removeByIds; exercised by service tests in Phase 2)
+- [x] Phase 1 exit gate passed: tsc clean, oxlint 0 errors, prettier clean, 1181 tests pass, live calls verified for YouTube SERP, video info, Trends, suggest; Data API live call blocked on the user's GCP project (API disabled). knip reports the Phase 1 exports as unused because their only consumers are Phase 2 code; re-checked at the Phase 2 gate.
 
 Phase 2
+
 - [ ] 2.1 Shared types, schemas, formulas, tests
 - [ ] 2.2 Candidates
 - [ ] 2.3 Volume estimator
@@ -776,12 +812,14 @@ Phase 2
 - [ ] Phase 2 exit gate passed
 
 Phase 3
+
 - [ ] 3.1 MCP tools and tests
 - [ ] 3.2 Registration
 - [ ] 3.3 verify-local-mcp pass
 - [ ] Phase 3 exit gate passed
 
 Phase 4
+
 - [ ] 4.1 Route
 - [ ] 4.2 Navigation
 - [ ] 4.3 Hooks
@@ -793,18 +831,21 @@ Phase 4
 - [ ] Phase 4 exit gate passed
 
 Phase 5
+
 - [ ] 5.1 Skill
 - [ ] 5.2 Plugin sync
 - [ ] 5.3 SAM registration decision
 - [ ] Phase 5 exit gate passed
 
 Phase 6
+
 - [ ] 6.1 Calibration sample supplied
 - [ ] 6.2 Calibration script
 - [ ] 6.3 Constants updated and results recorded
 - [ ] Phase 6 exit gate passed
 
 Phase 7
+
 - [ ] 7.1 Sync docs current
 - [ ] 7.2 Self-hosting note
 - [ ] Phase 7 exit gate passed

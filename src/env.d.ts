@@ -57,6 +57,9 @@ declare namespace Cloudflare {
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
+    // SEO Forge: optional YouTube Data API v3 key for the channel-relative
+    // multiplier in YouTube Research. Unset = feature degrades gracefully.
+    YOUTUBE_DATA_API_KEY?: string;
 
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;

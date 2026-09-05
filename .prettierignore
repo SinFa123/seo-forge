@@ -14,6 +14,9 @@ plugins/openseo/skills/
 dist/
 drizzle/
 drizzle-pg/
+# SEO Forge: generated YouTube migration streams (docs/seoforge/PLAN.md)
+drizzle-youtube/
+drizzle-pg-youtube/
 planning/
 worker-configuration.d.ts
 web/

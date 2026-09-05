@@ -98,11 +98,11 @@ The finished product is SEO Forge running as a whole, not a set of parts.
 
 ## Data sources
 
-| Need | Source | Notes |
-| --- | --- | --- |
-| Top videos, views, publish time, thumbnails | DataForSEO YouTube organic SERP | Same API key upstream already requires |
-| Likes, comments, tags, subscriber count | DataForSEO YouTube video info | Same key, three times the SERP price per video |
-| Volume anchor | DataForSEO Google Ads search volume | Already wrapped by upstream |
-| YouTube-specific relative interest and related queries | DataForSEO Google Trends explore, type `youtube` | Relative 0 to 100 scale, five keywords per request |
-| Autocomplete suggestions and questions | YouTube suggest endpoint | Unofficial, free, no key, may change without notice |
-| Channel recent uploads for the multiplier | YouTube Data API v3 | Free API key, daily quota, optional feature |
+| Need                                                   | Source                                           | Notes                                               |
+| ------------------------------------------------------ | ------------------------------------------------ | --------------------------------------------------- |
+| Top videos, views, publish time, thumbnails            | DataForSEO YouTube organic SERP                  | Same API key upstream already requires              |
+| Likes, comments, tags, subscriber count                | DataForSEO YouTube video info                    | Same key, three times the SERP price per video      |
+| Volume anchor                                          | DataForSEO Google Ads search volume              | Already wrapped by upstream                         |
+| YouTube-specific relative interest and related queries | DataForSEO Google Trends explore, type `youtube` | Relative 0 to 100 scale, five keywords per request  |
+| Autocomplete suggestions and questions                 | YouTube suggest endpoint                         | Unofficial, free, no key, may change without notice |
+| Channel recent uploads for the multiplier              | YouTube Data API v3                              | Free API key, daily quota, optional feature         |

@@ -14,6 +14,9 @@
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
     "drizzle.config.ts",
     "drizzle-pg.config.ts",
+    // SEO Forge: separate YouTube migration stream (docs/seoforge/PLAN.md)
+    "drizzle-youtube.config.ts",
+    "drizzle-pg-youtube.config.ts",
     // DB schema — exports consumed via `import * as schema` / drizzle()
     "src/db/index.ts",
     "src/db/schema.ts",

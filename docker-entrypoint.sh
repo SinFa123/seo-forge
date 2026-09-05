@@ -14,6 +14,8 @@ echo 'OpenSEO sends an anonymous usage heartbeat (counts only). Disable: OPENSEO
 pnpm exec tsx scripts/selfhost-preflight.ts
 
 pnpm run db:migrate:local
+# SEO Forge: YouTube Research tables live in their own migration stream.
+pnpm run db:youtube:migrate:local
 
 # POSTHOG_SOURCEMAPS (CI sourcemap uploads) moves vite's outDir; keep the
 # fingerprint marker beside the output it describes.

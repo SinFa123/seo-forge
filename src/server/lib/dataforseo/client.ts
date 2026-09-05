@@ -49,6 +49,11 @@ import {
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
 import {
+  fetchYoutubeSerp,
+  fetchYoutubeVideoInfo,
+} from "@/server/lib/dataforseo/youtube";
+import { fetchGoogleTrendsExplore } from "@/server/lib/dataforseo/google-trends";
+import {
   fetchLlmAggregatedMetrics,
   fetchLlmCrossAggregatedMetrics,
   fetchLlmMentionsSearch,
@@ -136,6 +141,15 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
     },
     lighthouse: {
       live: meter(customer, fetchLighthouseResult),
+    },
+    // SEO Forge: YouTube Research (see docs/seoforge/PLAN.md). serp/youtube/*
+    // paths map to keyword_research in billing-credit-features.ts.
+    youtube: {
+      serp: meter(customer, fetchYoutubeSerp),
+      videoInfo: meter(customer, fetchYoutubeVideoInfo),
+    },
+    trends: {
+      explore: meter(customer, fetchGoogleTrendsExplore),
     },
     aiSearch: {
       mentionsSearch: meter(customer, fetchLlmMentionsSearch),
