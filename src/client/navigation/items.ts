@@ -9,6 +9,7 @@ import {
   Search,
   Sparkles,
   TrendingUp,
+  Youtube,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
 import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
@@ -26,6 +27,11 @@ const projectNavItems = [
     to: "/p/$projectId/keywords" as const,
     label: "Keyword Research",
     icon: Search,
+  },
+  {
+    to: "/p/$projectId/youtube" as const,
+    label: "YouTube Research",
+    icon: Youtube,
   },
   {
     to: "/p/$projectId/saved" as const,
@@ -107,6 +113,7 @@ export function getProjectNavGroups(projectId: string) {
       label: "Research",
       items: [
         byPath("/p/$projectId/keywords"),
+        byPath("/p/$projectId/youtube"),
         byPath("/p/$projectId/domain"),
         byPath("/p/$projectId/backlinks"),
         byPath("/p/$projectId/brand-lookup"),

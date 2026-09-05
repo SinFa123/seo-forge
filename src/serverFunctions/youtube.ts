@@ -14,33 +14,45 @@ import {
 // src/serverFunctions/keywords.ts: project middleware, Zod validation, market
 // resolution, then straight into the service.
 
+function shouldUseYoutubeE2eFixtures() {
+  return import.meta.env.VITE_E2E_YOUTUBE_FIXTURES === "1";
+}
+
+async function getYoutubeE2eFixtures() {
+  return import("../../e2e/fixtures/youtube-research-fixtures");
+}
+
 export const researchYoutubeKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(researchYoutubeKeywordsSchema)
-  .handler(async ({ data, context }) =>
-    YoutubeResearchService.research(
-      {
-        ...data,
-        ...resolveMarket(data, context.project),
-        projectId: context.projectId,
-      },
-      context,
-    ),
-  );
+  .handler(async ({ data, context }) => {
+    const input = {
+      ...data,
+      ...resolveMarket(data, context.project),
+      projectId: context.projectId,
+    };
+    if (shouldUseYoutubeE2eFixtures()) {
+      const fixtures = await getYoutubeE2eFixtures();
+      return fixtures.getYoutubeResearchFixture(input);
+    }
+    return YoutubeResearchService.research(input, context);
+  });
 
 export const getYoutubeVideos = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(getYoutubeVideosSchema)
-  .handler(async ({ data, context }) =>
-    YoutubeResearchService.getVideos(
-      {
-        ...data,
-        ...resolveMarket(data, context.project),
-        projectId: context.projectId,
-      },
-      context,
-    ),
-  );
+  .handler(async ({ data, context }) => {
+    const input = {
+      ...data,
+      ...resolveMarket(data, context.project),
+      projectId: context.projectId,
+    };
+    if (shouldUseYoutubeE2eFixtures()) {
+      const fixtures = await getYoutubeE2eFixtures();
+      return fixtures.getYoutubeVideosFixture(input);
+    }
+    return YoutubeResearchService.getVideos(input, context);
+  });
 
 export const saveYoutubeKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)

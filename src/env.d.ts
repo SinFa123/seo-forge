@@ -77,6 +77,7 @@ interface ImportMetaEnv {
   readonly TURNSTILE_SITE_KEY?: string;
   readonly VITE_E2E_DOMAIN_FIXTURES?: string;
   readonly VITE_E2E_KEYWORD_FIXTURES?: string;
+  readonly VITE_E2E_YOUTUBE_FIXTURES?: string;
 }
 
 interface ImportMeta {

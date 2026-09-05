@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { booleanSearchParamSchema } from "@/types/schemas/domain";
 import {
   YOUTUBE_KEYWORD_KINDS,
   YOUTUBE_VOLUME_CONFIDENCES,
@@ -34,7 +33,8 @@ export const youtubeSavedSortFields = [
 export const youtubeTabs = ["keywords", "videos", "saved"] as const;
 export type YoutubeTab = (typeof youtubeTabs)[number];
 
-const sortDirs = ["asc", "desc"] as const;
+export const youtubeSortDirs = ["asc", "desc"] as const;
+export type YoutubeSortDir = (typeof youtubeSortDirs)[number];
 const keywordInputSchema = z.string().trim().min(1).max(200);
 const marketSchema = {
   locationCode: z.number().int().positive().optional(),
@@ -113,7 +113,7 @@ export const getSavedYoutubeKeywordsSchema = z.object({
   page: z.number().int().positive().default(1),
   pageSize: z.number().int().positive().max(200).default(50),
   sort: z.enum(youtubeSavedSortFields).default("createdAt"),
-  order: z.enum(sortDirs).default("desc"),
+  order: z.enum(youtubeSortDirs).default("desc"),
 });
 
 export const removeSavedYoutubeKeywordsSchema = z.object({
@@ -128,7 +128,7 @@ export const youtubeSearchSchema = z.object({
   lang: z.string().min(2).max(8).optional(),
   tab: z.enum(youtubeTabs).optional(),
   sort: z.enum(youtubeSortFields).optional(),
-  order: z.enum(sortDirs).optional(),
+  order: z.enum(youtubeSortDirs).optional(),
   rows: z.coerce
     .number()
     .int()
@@ -136,7 +136,6 @@ export const youtubeSearchSchema = z.object({
     .max(YOUTUBE_SERP_ROW_LIMIT_MAX)
     .optional(),
   kind: z.enum(YOUTUBE_KEYWORD_KINDS).optional(),
-  questions: booleanSearchParamSchema.optional(),
 });
 
 export type ResearchYoutubeKeywordsInput = z.infer<

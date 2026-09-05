@@ -113,7 +113,7 @@ export const YOUTUBE_VIDEO_COLUMNS: readonly YoutubeColumn<YoutubeVideoRow>[] =
     { key: "url", label: "URL", align: "left", format: (r) => r.url },
   ];
 
-function formatViewsPerHour(value: number | null): string {
+export function formatViewsPerHour(value: number | null): string {
   if (value == null) return "—";
   if (value >= 100) return formatInteger(value);
   return value.toFixed(1);
