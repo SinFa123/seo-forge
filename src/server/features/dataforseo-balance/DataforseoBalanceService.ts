@@ -10,7 +10,7 @@ type DataforseoBalance = {
   fetchedAt: string;
 };
 
-export async function getBalance(): Promise<DataforseoBalance> {
+async function getBalance(): Promise<DataforseoBalance> {
   try {
     const data = await fetchUserData();
     return {
