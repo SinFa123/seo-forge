@@ -19,6 +19,8 @@ describe("buildSamSkillSource", () => {
       "seo-audit",
       "seo-coach",
       "seo-project-setup",
+      // SEO Forge: our YouTube skill; keep this line when merging upstream.
+      "youtube-research",
     ]);
 
     const loaded = await source.load("seo-project-setup");
