@@ -216,6 +216,15 @@ Paths are relative to the repo root.
 - The Keyword Research mobile layout renders the same `KeywordResearchDesktopTable` inside a horizontally scrolling wrapper rather than a card list, so the planned separate `YoutubeKeywordsMobileResults.tsx` was unnecessary; `YoutubeKeywordsResults.tsx` is responsive on its own.
 - `KeywordResearchPagination`, `SavedKeywordsPagination`, `SavedKeywordsStatus`, `DeleteSavedKeywordsModal`, `RemoveSavedKeywordsError`, `SortableHeader`, `TableBulkActionBar`, `TableExportMenu`, `DifficultyBadge`, and `LocationSelect` are generic enough to reuse unchanged; only the pagination hook (`useKeywordResearchPagination`) is typed to `KeywordResearchRow[]` and was re-implemented locally.
 
+### Resolved on 2026-09-06 (latency)
+
+- Single-call latency measured from the VPS: YouTube organic live SERP about 14 s, video info about 4 s, Google Trends explore about 7 s, Google Ads search volume about 0.2 s, YouTube suggest about 0.1 s.
+  The SERP latency dominates every research run.
+- A default research run (30 row SERPs) took 37 s when the row SERPs waited for the seed's video info.
+  Running the seed chain (SERP, then video info) beside the row chain (Trends + suggest, Google Ads, then all row SERPs in one round at concurrency 32) brought it to 23 s: candidates 7.2 s (Trends), anchors 2.8 s, row SERPs 13.3 s; the seed chain (10.2 s) is hidden behind it.
+  `diagnostics.timingsMs` records these phases on every run.
+  The remaining floor without extra spend is Trends + Ads + one SERP round; buying the Google Ads anchors before Trends returns would need a second Ads request (0.09 USD) to anchor the Trends-related candidates.
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
