@@ -101,6 +101,7 @@ describe("YouTube MCP tools", () => {
         locationCode: 2840,
         languageCode: "en",
         serpRowLimit: 5,
+        refresh: false,
       },
       expect.objectContaining({ organizationId: "org_123" }),
     );
@@ -171,6 +172,7 @@ describe("YouTube MCP tools", () => {
         locationCode: 2840,
         languageCode: "en",
         depth: 20,
+        refresh: false,
       },
       expect.objectContaining({ projectId: "project_1" }),
     );

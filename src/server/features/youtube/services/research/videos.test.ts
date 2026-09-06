@@ -31,6 +31,7 @@ vi.mock("@/server/lib/youtubeDataApiClient", () => ({
   getChannelRecentUploads: mocks.getChannelRecentUploads,
 }));
 
+import { YOUTUBE_CACHE_TTL } from "./cache";
 import { getVideos } from "./videos";
 
 const billingCustomer: BillingCustomerContext = {
@@ -45,6 +46,7 @@ const input = {
   locationCode: 2840,
   languageCode: "en",
   depth: 20,
+  refresh: false,
 };
 
 function mockClient() {
@@ -128,12 +130,12 @@ describe("youtube videos", () => {
     expect(mocks.setCached).toHaveBeenCalledWith(
       expect.stringContaining("youtube:channel-stats"),
       expect.anything(),
-      7 * 24 * 60 * 60,
+      YOUTUBE_CACHE_TTL.channelStats,
     );
     expect(mocks.setCached).toHaveBeenCalledWith(
       expect.stringContaining("youtube:videos"),
       result,
-      6 * 60 * 60,
+      YOUTUBE_CACHE_TTL.videos,
     );
   });
 
@@ -151,7 +153,7 @@ describe("youtube videos", () => {
     expect(mocks.setCached).toHaveBeenCalledWith(
       expect.stringContaining('"dataApiConfigured":false'),
       result,
-      6 * 60 * 60,
+      YOUTUBE_CACHE_TTL.videos,
     );
   });
 

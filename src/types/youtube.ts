@@ -20,7 +20,7 @@ export type YoutubeResearchApiCalls = {
 };
 
 /** Wall-clock milliseconds per phase of one research run. */
-export type YoutubeResearchTimings = {
+type YoutubeResearchTimings = {
   seedVideos: number;
   candidates: number;
   anchors: number;

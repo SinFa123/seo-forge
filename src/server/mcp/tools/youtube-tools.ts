@@ -75,6 +75,12 @@ const researchInputSchema = {
     .describe(
       `How many candidate keywords (ranked by Google volume) get their own YouTube SERP for a competition score. Defaults to ${YOUTUBE_SERP_ROW_LIMIT_DEFAULT}; 0 scores only the seed. Each row SERP costs about 0.002 USD; rows beyond the limit have competition null.`,
     ),
+  refresh: z
+    .boolean()
+    .optional()
+    .describe(
+      "Results are kept until refreshed; each result carries fetchedAt. Pass true to re-buy the research and overwrite the cached result. Ask the user first, since it charges the full cost again.",
+    ),
   rowLimit: z
     .number()
     .int()
@@ -92,7 +98,7 @@ export const researchYoutubeKeywordsTool = {
   name: "research_youtube_keywords",
   config: {
     title: "Research YouTube keywords (bulk)",
-    description: `Research 1-5 seed keywords for YouTube: an overview of the seed (estimated monthly YouTube searches with confidence, competition 0-100 from the top 20 videos, overall opportunity 0-100, average views per hour of the top videos) plus up to 200 related, matching, and question keywords with the same metrics. Charges DataForSEO spend per seed: about 0.30 USD at the default serpRowLimit (one YouTube SERP, 20 video-info lookups, one Google Trends request, one Google Ads volume request, ${YOUTUBE_SERP_ROW_LIMIT_DEFAULT} row SERPs), plus 0.002 USD per extra row SERP; results are cached for 24 hours so repeating a seed is free, and a call that fails at DataForSEO before returning results (for example HTTP 402 when the DataForSEO balance is exhausted) is not charged. ${VOLUME_CAVEAT} Returns per-seed results, so one bad seed does not fail the batch. Use get_youtube_videos for the ranking videos themselves.`,
+    description: `Research 1-5 seed keywords for YouTube: an overview of the seed (estimated monthly YouTube searches with confidence, competition 0-100 from the top 20 videos, overall opportunity 0-100, average views per hour of the top videos) plus up to 200 related, matching, and question keywords with the same metrics. Charges DataForSEO spend per seed: about 0.30 USD at the default serpRowLimit (one YouTube SERP, 20 video-info lookups, one Google Trends request, one Google Ads volume request, ${YOUTUBE_SERP_ROW_LIMIT_DEFAULT} row SERPs), plus 0.002 USD per extra row SERP; results are kept until refreshed (fetchedAt says when), so repeating a seed is free, and a call that fails at DataForSEO before returning results (for example HTTP 402 when the DataForSEO balance is exhausted) is not charged. ${VOLUME_CAVEAT} Returns per-seed results, so one bad seed does not fail the batch. Use get_youtube_videos for the ranking videos themselves.`,
     inputSchema: researchInputSchema,
     outputSchema: {
       results: z.array(
@@ -143,6 +149,7 @@ export const researchYoutubeKeywordsTool = {
               locationCode,
               languageCode,
               serpRowLimit: args.serpRowLimit ?? YOUTUBE_SERP_ROW_LIMIT_DEFAULT,
+              refresh: args.refresh ?? false,
             },
             context.billing,
           );
@@ -224,6 +231,12 @@ const videosInputSchema = {
     ),
   locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
+  refresh: z
+    .boolean()
+    .optional()
+    .describe(
+      "Results are kept until refreshed (see fetchedAt). Pass true to re-buy the SERP and overwrite the cached result.",
+    ),
 } as const;
 
 type VideosArgs = z.infer<z.ZodObject<typeof videosInputSchema>>;
@@ -232,7 +245,7 @@ export const getYoutubeVideosTool = {
   name: "get_youtube_videos",
   config: {
     title: "Get top YouTube videos",
-    description: `The videos currently ranking on YouTube for a keyword: title, channel, publish date, views, likes, comments, duration, Shorts flag, average views per hour since publish, subscriber count, and a channel multiplier (video views divided by the median of the channel's other recent uploads, e.g. 35x means an outlier for that channel). Charges about 0.002 USD per 20 results plus 0.006 USD per video for video info (cached 24 hours; the keyword research seed's 20 videos are usually already cached; a call that fails at DataForSEO before returning results is not charged). The channel multiplier needs the optional YouTube Data API key on the server; when \`dataApiStatus\` is not "ok" the multiplier is null and the response says why. Use research_youtube_keywords for keyword metrics.`,
+    description: `The videos currently ranking on YouTube for a keyword: title, channel, publish date, views, likes, comments, duration, Shorts flag, average views per hour since publish, subscriber count, and a channel multiplier (video views divided by the median of the channel's other recent uploads, e.g. 35x means an outlier for that channel). Charges about 0.002 USD per 20 results plus 0.006 USD per video for video info; the result is kept until refreshed (fetchedAt says when) and the keyword research seed's 20 videos are usually already cached. A call that fails at DataForSEO before returning results is not charged. The channel multiplier needs the optional YouTube Data API key on the server; when \`dataApiStatus\` is not "ok" the multiplier is null and the response says why. Use research_youtube_keywords for keyword metrics.`,
     inputSchema: videosInputSchema,
     outputSchema: {
       keyword: z.string(),
@@ -257,6 +270,7 @@ export const getYoutubeVideosTool = {
         locationCode,
         languageCode,
         depth: args.depth ?? YOUTUBE_VIDEOS_DEPTH_DEFAULT,
+        refresh: args.refresh ?? false,
       },
       context.billing,
     );

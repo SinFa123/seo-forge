@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getYoutubeVideos } from "@/serverFunctions/youtube";
 
@@ -13,23 +13,23 @@ export function useYoutubeVideosData(request: {
   active: boolean;
 }) {
   const enabled = request.active && request.keyword.length > 0;
+  const queryClient = useQueryClient();
+  const queryKey = [
+    "youtubeVideos",
+    request.projectId,
+    request.keyword,
+    request.locationCode ?? null,
+    request.languageCode ?? null,
+  ];
+  const data = {
+    projectId: request.projectId,
+    keyword: request.keyword,
+    locationCode: request.locationCode,
+    languageCode: request.languageCode,
+  };
   const query = useQuery({
-    queryKey: [
-      "youtubeVideos",
-      request.projectId,
-      request.keyword,
-      request.locationCode ?? null,
-      request.languageCode ?? null,
-    ],
-    queryFn: () =>
-      getYoutubeVideos({
-        data: {
-          projectId: request.projectId,
-          keyword: request.keyword,
-          locationCode: request.locationCode,
-          languageCode: request.languageCode,
-        },
-      }),
+    queryKey,
+    queryFn: () => getYoutubeVideos({ data }),
     enabled,
     staleTime: YOUTUBE_VIDEOS_STALE_TIME_MS,
     gcTime: YOUTUBE_VIDEOS_STALE_TIME_MS,
@@ -38,9 +38,18 @@ export function useYoutubeVideosData(request: {
     refetchOnWindowFocus: false,
   });
 
+  const refreshMutation = useMutation({
+    mutationFn: () => getYoutubeVideos({ data: { ...data, refresh: true } }),
+    onSuccess: (result) => {
+      queryClient.setQueryData(queryKey, result);
+    },
+  });
+
   return {
     data: enabled ? query.data : undefined,
     isLoading: enabled && query.isPending,
+    refresh: refreshMutation.mutate,
+    isRefreshing: refreshMutation.isPending,
     error:
       enabled && query.isError
         ? getStandardErrorMessage(query.error, "Could not load videos.")

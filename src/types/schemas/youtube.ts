@@ -52,6 +52,8 @@ export const researchYoutubeKeywordsSchema = z.object({
     .min(0)
     .max(YOUTUBE_SERP_ROW_LIMIT_MAX)
     .default(YOUTUBE_SERP_ROW_LIMIT_DEFAULT),
+  // Results are cached until refreshed; true re-buys and overwrites the cache.
+  refresh: z.boolean().default(false),
 });
 
 export const getYoutubeVideosSchema = z.object({
@@ -64,6 +66,7 @@ export const getYoutubeVideosSchema = z.object({
     .min(20)
     .max(YOUTUBE_VIDEOS_DEPTH_MAX)
     .default(YOUTUBE_VIDEOS_DEPTH_DEFAULT),
+  refresh: z.boolean().default(false),
 });
 
 /**

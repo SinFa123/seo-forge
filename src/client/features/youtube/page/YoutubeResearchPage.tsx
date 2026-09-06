@@ -29,6 +29,7 @@ import {
   YoutubeNoResultsState,
   YoutubeSearchHistoryState,
 } from "./YoutubeEmptyState";
+import { YoutubeFetchedLine as FetchedLine } from "./YoutubeFetchedLine";
 import { YoutubeKeywordsResults } from "./YoutubeKeywordsResults";
 import {
   YoutubeLoadingState,
@@ -249,6 +250,8 @@ export function YoutubeResearchPage({
             error={videos.error}
             retry={() => void videos.retry()}
             data={videos.data}
+            isRefreshing={videos.isRefreshing}
+            onRefresh={() => videos.refresh()}
           />
         ) : research.isLoading ? (
           <YoutubeLoadingState />
@@ -265,6 +268,13 @@ export function YoutubeResearchPage({
           />
         ) : research.data ? (
           <div className="flex flex-col gap-2">
+            <FetchedLine
+              label="Researched"
+              fetchedAt={research.data.fetchedAt}
+              cost="about 0.30 USD"
+              isRefreshing={research.isRefreshing}
+              onRefresh={() => research.refresh()}
+            />
             <YoutubeOverviewCards overview={research.data.seed} />
             <YoutubeKeywordsResults
               rows={tableRows}
@@ -363,16 +373,31 @@ function VideosContent({
   error,
   retry,
   data,
+  isRefreshing,
+  onRefresh,
 }: {
   isLoading: boolean;
   error: string | null;
   retry: () => void;
   data: ReturnType<typeof useYoutubeVideosData>["data"];
+  isRefreshing: boolean;
+  onRefresh: () => void;
 }) {
   if (isLoading) return <YoutubeVideosLoadingState />;
   if (error) {
     return <ErrorCard message={error} isCreditsError={false} retry={retry} />;
   }
   if (!data) return null;
-  return <YoutubeVideosGrid data={data} />;
+  return (
+    <div className="flex flex-col gap-2">
+      <FetchedLine
+        label="Fetched"
+        fetchedAt={data.fetchedAt}
+        cost="about 0.13 USD"
+        isRefreshing={isRefreshing}
+        onRefresh={onRefresh}
+      />
+      <YoutubeVideosGrid data={data} />
+    </div>
+  );
 }

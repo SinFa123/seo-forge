@@ -26,6 +26,7 @@ vi.mock("@/server/lib/youtubeAutocompleteClient", () => ({
   fetchYoutubeSuggestions: mocks.fetchYoutubeSuggestions,
 }));
 
+import { YOUTUBE_CACHE_TTL } from "./cache";
 import { research } from "./research";
 import type { DataforseoClient } from "./volume";
 
@@ -41,6 +42,7 @@ const input = {
   locationCode: 2840,
   languageCode: "en",
   serpRowLimit: 2,
+  refresh: false,
 };
 
 function serpItem(videoId: string, channelId = `chan_${videoId}`) {
@@ -175,7 +177,7 @@ describe("youtube research", () => {
     expect(mocks.setCached).toHaveBeenCalledWith(
       expect.stringContaining("youtube:research"),
       result,
-      24 * 60 * 60,
+      YOUTUBE_CACHE_TTL.research,
     );
   });
 
@@ -223,6 +225,11 @@ describe("youtube research", () => {
     await expect(research(input, billingCustomer)).resolves.toEqual(cached);
     expect(client.serp).not.toHaveBeenCalled();
     expect(mocks.fetchYoutubeSuggestions).not.toHaveBeenCalled();
+
+    // refresh re-buys and overwrites the cached result.
+    await research({ ...input, refresh: true }, billingCustomer);
+    expect(client.serp).toHaveBeenCalled();
+    expect(mocks.setCached).toHaveBeenCalled();
   });
 
   it("falls back to medium confidence for the seed when Trends has no signal", async () => {

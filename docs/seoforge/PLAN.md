@@ -225,6 +225,12 @@ Paths are relative to the repo root.
   `diagnostics.timingsMs` records these phases on every run.
   The remaining floor without extra spend is Trends + Ads + one SERP round; buying the Google Ads anchors before Trends returns would need a second Ads request (0.09 USD) to anchor the Trends-related candidates.
 
+### Decided on 2026-09-06 (brand and caching)
+
+- Brand: the product is "Sinfa SEO Forge" (`BRAND_NAME`); the sidebar and mobile header show the two-line mark used by Sinfa Audio Stream, `BRAND_OWNER` ("Sinfa") over a small uppercase `BRAND_PRODUCT` ("SEO Forge"), next to the logo. The logo is a hammer glyph on a Calm Green rounded square (`public/seoforge-logo.svg`); all icon PNGs and `favicon.ico` are rendered from it.
+- Theme: `src/client/styles/seoforge-theme.css` overrides upstream's daisyUI tokens for both themes with the Sinfa palette; loaded after `app.css` from `__root.tsx`.
+- Caching: research and videos results are kept indefinitely (single-operator deployment). Every result shows its fetch date and offers a Refresh button; server functions and MCP tools take `refresh: true` to re-buy and overwrite. Per-video and per-channel snapshots keep their 24 hour and 7 day TTLs so a refresh picks up new views.
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
@@ -416,14 +422,14 @@ They are cached in R2 through upstream's `r2-cache.ts` helpers under our own key
 
 ### Cache namespaces and TTLs
 
-| Namespace               | Key inputs                                                           | TTL      |
-| ----------------------- | -------------------------------------------------------------------- | -------- |
-| `youtube:research`      | keyword, locationCode, languageCode, serpRowLimit, estimator version | 24 hours |
-| `youtube:videos`        | keyword, locationCode, languageCode, depth                           | 6 hours  |
-| `youtube:video-info`    | videoId, locationCode, languageCode                                  | 24 hours |
-| `youtube:channel-stats` | channelId                                                            | 7 days   |
-| `youtube:trends`        | sorted keyword batch, locationCode, languageCode                     | 7 days   |
-| `youtube:autocomplete`  | term, hl, gl                                                         | 7 days   |
+| Namespace               | Key inputs                                                           | TTL                                                            |
+| ----------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `youtube:research`      | keyword, locationCode, languageCode, serpRowLimit, estimator version | indefinite (until `refresh: true`); result carries `fetchedAt` |
+| `youtube:videos`        | keyword, locationCode, languageCode, depth, Data API configured      | indefinite (until `refresh: true`); result carries `fetchedAt` |
+| `youtube:video-info`    | videoId, locationCode, languageCode                                  | 24 hours                                                       |
+| `youtube:channel-stats` | channelId                                                            | 7 days                                                         |
+| `youtube:trends`        | sorted keyword batch, locationCode, languageCode                     | 7 days                                                         |
+| `youtube:autocomplete`  | term, hl, gl                                                         | 7 days                                                         |
 
 Every cached value is validated with Zod on read, as upstream does.
 Bump the estimator version constant whenever a formula changes so stale cached scores are recomputed.
@@ -880,8 +886,8 @@ Target: fewer than fifteen files, each under ten changed lines.
 | `src/client/features/auth/AuthPage.tsx`            | brand alt text                                                 | 2      | 0.6        | done    |
 | `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                     | 5      | 0.6        | done    |
 | `public/site.webmanifest`                          | brand name; theme and background colours                       | 4      | 0.6, brand | done    |
-| `src/client/components/Sidebar.tsx`                | sidebar brand text and logo mark                               | 4      | 0.6, brand | done    |
-| `src/client/layout/AppShell.tsx`                   | mobile header brand text and logo mark                         | 6      | 0.6, brand | done    |
+| `src/client/components/Sidebar.tsx`                | two-line brand mark with logo                                  | 12     | 0.6, brand | done    |
+| `src/client/layout/AppShell.tsx`                   | two-line brand mark with logo (mobile header)                  | 12     | 0.6, brand | done    |
 | `public/*.png`, `public/favicon.ico`               | SEO Forge logo assets rendered from `public/seoforge-logo.svg` | binary | brand      | done    |
 
 ## 9. Status

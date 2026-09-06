@@ -3,7 +3,7 @@ export function YoutubeLoadingState() {
     <div className="flex-1 w-full space-y-2" aria-busy>
       <p className="text-sm text-base-content/60" role="status">
         Researching on YouTube: about 60 provider calls, usually 15 to 30
-        seconds. Results are cached for 24 hours.
+        seconds. Results are kept until you refresh them.
       </p>
       <div className="hidden md:flex flex-col gap-2">
         <div className="rounded-xl border border-base-300 bg-base-100 p-4">

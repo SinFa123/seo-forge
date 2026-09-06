@@ -27,7 +27,7 @@ import { closeDropdown } from "@/client/lib/dropdown";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
-import { BRAND_NAME } from "@/shared/brand";
+import { BRAND_OWNER, BRAND_PRODUCT } from "@/shared/brand";
 
 interface SidebarProps {
   projectId: string | null;
@@ -130,14 +130,21 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
         <Link
           to="/"
           onClick={onNavigate}
-          className="flex items-center gap-2 text-base font-semibold text-base-content"
+          className="flex items-center gap-2.5 text-base-content"
         >
           <img
             src="/transparent-logo.png"
             alt=""
-            className="size-6 rounded-md"
+            className="size-8 rounded-lg"
           />
-          {BRAND_NAME}
+          <span className="flex flex-col leading-none">
+            <span className="text-lg font-semibold tracking-tight">
+              {BRAND_OWNER}
+            </span>
+            <span className="mt-0.5 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-base-content/50">
+              {BRAND_PRODUCT}
+            </span>
+          </span>
         </Link>
         {onClose ? (
           <button

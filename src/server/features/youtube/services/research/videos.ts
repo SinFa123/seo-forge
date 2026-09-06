@@ -98,7 +98,7 @@ export async function getVideos(
     await getOptionalEnvValue(YOUTUBE_DATA_API_KEY_ENV),
   );
   // The key state is part of the cache key so configuring the Data API takes
-  // effect on the next request instead of after the 6 hour TTL.
+  // effect on the next request without a refresh.
   const cacheKey = await buildCacheKey(YOUTUBE_CACHE_NAMESPACE.videos, {
     cacheVersion: CACHE_VERSION,
     estimatorVersion: YOUTUBE_SCORING.ESTIMATOR_VERSION,
@@ -109,7 +109,9 @@ export async function getVideos(
     depth: input.depth,
     dataApiConfigured,
   });
-  const cached = await readCached(cacheKey, cachedResultSchema);
+  const cached = input.refresh
+    ? null
+    : await readCached(cacheKey, cachedResultSchema);
   if (cached) return cached;
 
   const client = createDataforseoClient(billingCustomer);

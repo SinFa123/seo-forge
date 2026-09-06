@@ -13,7 +13,7 @@ import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
 import { getProjects } from "@/serverFunctions/projects";
 import { getLastProjectId } from "@/client/lib/active-project";
-import { BRAND_NAME } from "@/shared/brand";
+import { BRAND_OWNER, BRAND_PRODUCT } from "@/shared/brand";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 
@@ -181,12 +181,16 @@ function MobileTopBar({
       >
         <Menu className="h-5 w-5" />
       </button>
-      <Link
-        to="/"
-        className="ml-1 flex items-center gap-2 font-semibold text-base-content"
-      >
-        <img src="/transparent-logo.png" alt="" className="size-5 rounded" />
-        {BRAND_NAME}
+      <Link to="/" className="ml-1 flex items-center gap-2 text-base-content">
+        <img src="/transparent-logo.png" alt="" className="size-6 rounded-md" />
+        <span className="flex flex-col leading-none">
+          <span className="text-base font-semibold tracking-tight">
+            {BRAND_OWNER}
+          </span>
+          <span className="mt-0.5 text-[0.625rem] font-medium uppercase tracking-[0.06em] text-base-content/50">
+            {BRAND_PRODUCT}
+          </span>
+        </span>
       </Link>
     </div>
   );

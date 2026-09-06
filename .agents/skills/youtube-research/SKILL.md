@@ -22,12 +22,12 @@ If `projectId` is missing, use `list_projects` first. If the market is unclear a
 The project-context tools are free and shared with the app and other agents.
 
 1. Call `get_project_context` first and ground the research in the business, the goal, and the markets already saved.
-2. Before spending credits, check the research log for an entry starting with "YouTube research:" whose seeds and market cover the current request and that is less than 30 days old. If one exists, reuse its verdict and say so instead of re-buying it; the tool cache covers only 24 hours.
+2. Before spending credits, check the research log for an entry starting with "YouTube research:" whose seeds and market cover the current request and that is less than 30 days old. If one exists, reuse its verdict and say so instead of re-buying it; the tools themselves return cached results for free until someone refreshes them.
 3. On finish, append a research log entry: `{ appendResearchLog: { summary: "YouTube research: <seeds/market>. Verdict: <conclusion>" } }`.
 
 ## SEO Forge MCP tools
 
-- `research_youtube_keywords`: primary tool. 1-5 seeds per call. Returns, per seed, an overview row (estimated volume with confidence, competition, overall score, median views per hour of the top videos) and up to 200 related, matching, and question keywords with the same columns. Each seed costs about 0.30 USD of DataForSEO spend at the default `serpRowLimit`; results are cached for 24 hours.
+- `research_youtube_keywords`: primary tool. 1-5 seeds per call. Returns, per seed, an overview row (estimated volume with confidence, competition, overall score, median views per hour of the top videos) and up to 200 related, matching, and question keywords with the same columns. Each seed costs about 0.30 USD of DataForSEO spend at the default `serpRowLimit`. Results are kept until refreshed and carry `fetchedAt`; pass `refresh: true` only when the user asks for fresh numbers, since it charges the full cost again.
   `serpRowLimit` scores rows in descending Google volume order, so a low limit scores short head terms first and leaves long-tail and question keywords with `competition: null`. Raise it (each row is one 0.002 USD SERP) when the user wants long-tail terms scored, or say plainly which rows are unscored.
 - `get_youtube_videos`: the videos currently ranking for one keyword with channel, publish date, views, average views per hour since publish, subscribers, and the channel multiplier (how the video performs against its own channel). About 0.002 USD per 20 results plus 0.006 USD per video; the seed's videos are usually already cached by the research call.
   The channel multiplier needs a YouTube Data API key on the server. When `dataApiStatus` is `not_configured` or `error`, the multiplier is null for every row: say so once and use average views per hour as the outlier signal instead.

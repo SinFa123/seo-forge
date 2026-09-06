@@ -40,7 +40,7 @@ import {
 // run (PLAN.md section 4): seed SERP (1), seed video info (<= 20, cached per
 // video), suggest (~36, free), Trends (1: seed graph for confidence plus
 // related queries), Google Ads volume (1 bulk), and one SERP per candidate row
-// up to `serpRowLimit`. The whole result is cached 24 hours; the key carries the
+// up to `serpRowLimit`. The whole result is cached until the user refreshes it; the key carries the
 // estimator version so a formula change recomputes rather than serves stale
 // scores.
 
@@ -163,7 +163,9 @@ export async function research(
     ...market,
     serpRowLimit: input.serpRowLimit,
   });
-  const cached = await readCached(cacheKey, cachedResultSchema);
+  const cached = input.refresh
+    ? null
+    : await readCached(cacheKey, cachedResultSchema);
   if (cached) return cached;
 
   const client = createDataforseoClient(billingCustomer);

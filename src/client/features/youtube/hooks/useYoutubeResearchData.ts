@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import {
   getErrorCode,
@@ -38,6 +38,7 @@ export function useYoutubeResearchData(
 ) {
   const hasSearched = request.keyword.length > 0;
   const queryKey = buildYoutubeResearchQueryKey(request);
+  const queryClient = useQueryClient();
   const query = useQuery({
     queryKey,
     queryFn: () => researchYoutubeKeywords({ data: request }),
@@ -71,10 +72,23 @@ export function useYoutubeResearchData(
     request,
   ]);
 
+  // Results are kept server-side until refreshed; this re-buys the research
+  // and replaces the cached row so the table updates in place.
+  const refreshMutation = useMutation({
+    mutationFn: () =>
+      researchYoutubeKeywords({ data: { ...request, refresh: true } }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(queryKey, data);
+    },
+  });
+
   return {
     data: hasSearched ? query.data : undefined,
     hasSearched,
     isLoading: hasSearched && query.isPending,
+    refresh: refreshMutation.mutate,
+    isRefreshing: refreshMutation.isPending,
+    refreshError: refreshMutation.error,
     error:
       hasSearched && query.isError
         ? getStandardErrorMessage(query.error, "Research failed.")
