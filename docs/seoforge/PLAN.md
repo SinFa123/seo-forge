@@ -243,6 +243,11 @@ Paths are relative to the repo root.
   It is derived from the videos result (no extra provider calls) and exposed to MCP as `channels` on `get_youtube_videos` with its own text table.
 - The channel filter search param is `cv`, not `view`: TanStack Router merges every route's search params into one type for `navigate`, and Backlinks already declares `view` with a different enum.
 
+### Decided on 2026-09-06 (recent searches)
+
+- Recent searches on the YouTube tab remember the view, not only the keyword: one entry per keyword, market, and sub-tab (Keywords, Videos, Channels), each showing a view badge, the country, and the date and time; clicking restores that view. Saved is not recorded because it is not a search. Entries written before the view was recorded read as Keywords.
+- Rank Tracking's "Check rankings" (in the tracker's "⋯" menu) is a silent no-op when the tracker has no keywords, while the empty state says to click "Check Now"; this is upstream behaviour (`RankTrackingDomainDetail.tsx`, `if (count > 0) requestCheck(count)`), reproduced on 2026-09-06 with the user's 0-keyword tracker. Not changed; reported to the user with the option of a registered two-line fix.
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
