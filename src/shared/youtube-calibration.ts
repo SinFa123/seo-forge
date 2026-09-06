@@ -1,5 +1,9 @@
 import { sort } from "remeda";
-import { YOUTUBE_SCORING, normalizeYoutubeKeyword } from "./youtube";
+import {
+  YOUTUBE_SCORING,
+  computeOverallScore,
+  normalizeYoutubeKeyword,
+} from "./youtube";
 
 // SEO Forge: fits the volume-estimator constants in YOUTUBE_SCORING to a VidIQ
 // sample (Phase 6 of docs/seoforge/PLAN.md). Pure so it is unit-tested; the
@@ -17,6 +21,11 @@ export type CalibrationSample = {
   interest: number | null;
   /** The benchmark's mean trailing interest in that same batch. */
   benchmarkInterest: number | null;
+  /** Our competition score from one YouTube SERP, when the CLI bought it. */
+  competition?: number | null;
+  /** VidIQ's competition and overall scores, when the export carried them. */
+  vidiqCompetition?: number | null;
+  vidiqOverall?: number | null;
 };
 
 type CalibrationRow = {
@@ -26,6 +35,8 @@ type CalibrationRow = {
   estimate: number | null;
   /** estimate / vidiqVolume; 1 means exact, 2 means twice VidIQ. */
   ratio: number | null;
+  competition: number | null;
+  overallScore: number | null;
 };
 
 type CalibrationFit = {
@@ -39,6 +50,9 @@ type CalibrationFit = {
     medianRatio: number | null;
     /** Spearman rank correlation between estimates and VidIQ volumes. */
     spearman: number | null;
+    /** Rank correlations of our scores with VidIQ's, when both sides exist. */
+    competitionSpearman: number | null;
+    overallSpearman: number | null;
   };
   rows: CalibrationRow[];
 };
@@ -153,7 +167,12 @@ export function fitYoutubeScoring(
 
   const rows: CalibrationRow[] = samples.map((sample) => {
     if (sample.anchorVolume == null || sample.anchorVolume <= 0) {
-      return { ...pick(sample), estimate: null, ratio: null };
+      return {
+        ...pick(sample),
+        estimate: null,
+        ratio: null,
+        overallScore: null,
+      };
     }
     const hasTrends =
       sample.interest != null &&
@@ -176,10 +195,22 @@ export function fitYoutubeScoring(
       ...pick(sample),
       estimate,
       ratio: sample.vidiqVolume > 0 ? estimate / sample.vidiqVolume : null,
+      overallScore: computeOverallScore(estimate, sample.competition ?? null),
     };
   });
 
   const paired = rows.filter((row) => row.estimate != null);
+  const competitionPairs = samples.flatMap((sample) =>
+    sample.competition != null && sample.vidiqCompetition != null
+      ? [[sample.competition, sample.vidiqCompetition] as const]
+      : [],
+  );
+  const overallPairs = rows.flatMap((row, index) => {
+    const vidiqOverall = samples[index]?.vidiqOverall;
+    return row.overallScore != null && vidiqOverall != null
+      ? [[row.overallScore, vidiqOverall] as const]
+      : [];
+  });
   return {
     benchmark: { keyword: benchmark, youtubeMonthlyVolume: benchmarkVolume },
     defaultYoutubeShare,
@@ -197,6 +228,14 @@ export function fitYoutubeScoring(
         paired.map((row) => row.estimate ?? 0),
         paired.map((row) => row.vidiqVolume),
       ),
+      competitionSpearman: spearmanCorrelation(
+        competitionPairs.map(([ours]) => ours),
+        competitionPairs.map(([, theirs]) => theirs),
+      ),
+      overallSpearman: spearmanCorrelation(
+        overallPairs.map(([ours]) => ours),
+        overallPairs.map(([, theirs]) => theirs),
+      ),
     },
     rows,
   };
@@ -207,5 +246,6 @@ function pick(sample: CalibrationSample) {
     keyword: sample.keyword,
     vidiqVolume: sample.vidiqVolume,
     anchorVolume: sample.anchorVolume,
+    competition: sample.competition ?? null,
   };
 }

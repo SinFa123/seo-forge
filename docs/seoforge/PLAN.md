@@ -930,8 +930,8 @@ Phase 5
 
 Phase 6
 
-- [ ] 6.1 Calibration sample supplied (waiting on the user's VidIQ CSV: `keyword,vidiq_volume`, 100 to 200 rows across volume tiers, ideally including "how to tie a tie")
-- [x] 6.2 Calibration script (`scripts/youtube-volume-calibration.ts` over the pure `fitYoutubeScoring` in `src/shared/youtube-calibration.ts`, 2 tests). Not yet run live: needs the CSV and a positive DataForSEO balance (about 0.09 USD per 700 keywords plus 0.011 USD per 4 keywords).
+- [ ] 6.1 Calibration sample supplied (waiting on the user's VidIQ export: header row with `keyword,vidiq_volume` and optionally `vidiq_competition,vidiq_overall`; 50 to 200 rows across volume tiers, ideally including "how to tie a tie"; values like "301K" are accepted)
+- [x] 6.2 Calibration script (`scripts/youtube-volume-calibration.ts` over the pure `fitYoutubeScoring` in `src/shared/youtube-calibration.ts`, 3 tests). When the export carries VidIQ competition and overall scores it also buys one YouTube SERP per keyword (0.002 USD) and reports Spearman rank correlations of our competition and overall against VidIQ's. Not yet run live: needs the CSV (about 0.09 USD per 700 keywords plus 0.011 USD per 4 keywords plus 0.002 USD per keyword for scores).
 - [ ] 6.3 Constants updated and results recorded (after 6.1)
 - [ ] Phase 6 exit gate passed (blocked on 6.1)
 

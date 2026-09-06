@@ -56,6 +56,45 @@ describe("fitYoutubeScoring", () => {
   });
 });
 
+describe("fitYoutubeScoring score correlations", () => {
+  it("correlates our competition and overall scores with VidIQ's when both sides exist", () => {
+    const fit = fitYoutubeScoring(
+      [
+        {
+          ...sample("a", 1000, 2000, null),
+          competition: 20,
+          vidiqCompetition: 10,
+          vidiqOverall: 90,
+        },
+        {
+          ...sample("b", 1000, 2000, null),
+          competition: 50,
+          vidiqCompetition: 40,
+          vidiqOverall: 60,
+        },
+        {
+          ...sample("c", 1000, 2000, null),
+          competition: 80,
+          vidiqCompetition: 70,
+          vidiqOverall: 30,
+        },
+        {
+          ...sample("d", 1000, null, null),
+          competition: 90,
+          vidiqCompetition: 95,
+        },
+      ],
+      BENCH,
+    );
+
+    expect(fit.stats.competitionSpearman).toBe(1);
+    // Same estimate everywhere, so our overall falls as competition rises,
+    // matching VidIQ's overall ordering.
+    expect(fit.stats.overallSpearman).toBe(1);
+    expect(fit.rows[3]).toMatchObject({ competition: 90, overallScore: null });
+  });
+});
+
 describe("spearmanCorrelation", () => {
   it("is 1 for a monotone relation, -1 when reversed, and null for too few points", () => {
     expect(spearmanCorrelation([1, 5, 20, 100], [10, 20, 30, 40])).toBe(1);

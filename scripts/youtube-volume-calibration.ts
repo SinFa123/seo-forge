@@ -5,21 +5,30 @@
  * Usage:
  *   tsx scripts/youtube-volume-calibration.ts --csv vidiq.csv [--location 2840] [--language en] [--out fit.json]
  *
- * The CSV has a header row and two columns: keyword,vidiq_volume. Include the
- * benchmark keyword ("how to tie a tie") so its VidIQ volume becomes the
- * benchmark constant; otherwise the current constant is kept.
+ * The CSV has a header row; column names are matched case-insensitively and
+ * other columns are ignored:
+ *   keyword, vidiq_volume            required
+ *   vidiq_competition, vidiq_overall optional (0-100); when present the script
+ *                                    also buys one YouTube SERP per keyword
+ *                                    (0.002 USD) and reports how our
+ *                                    competition and overall scores rank
+ *                                    against VidIQ's
+ * Include the benchmark keyword ("how to tie a tie") so its VidIQ volume becomes
+ * the benchmark constant; otherwise the current constant is kept.
  *
  * Reads DATAFORSEO_API_KEY from the environment or .env.local. Cost: one Google
  * Ads search-volume request per 700 keywords (about 0.09 USD each) plus one
- * Google Trends request per 4 keywords (0.011 USD each); the script prints the
- * total the provider reported.
+ * Google Trends request per 4 keywords (0.011 USD each), plus the optional
+ * SERPs; the script prints the total the provider reported.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
 import process from "node:process";
 import {
   YOUTUBE_SCORING,
+  computeCompetition,
   normalizeYoutubeKeyword,
+  parseRelativePublicationDate,
 } from "../src/shared/youtube";
 import {
   type CalibrationSample,
@@ -77,23 +86,108 @@ async function post(path: string, body: unknown): Promise<DataforseoTask> {
   return task;
 }
 
-function readSample(
-  path: string,
-): Array<{ keyword: string; vidiqVolume: number }> {
+type SampleRow = {
+  keyword: string;
+  vidiqVolume: number;
+  vidiqCompetition: number | null;
+  vidiqOverall: number | null;
+};
+
+function splitCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (const char of line) {
+    if (char === '"') quoted = !quoted;
+    else if (char === "," && !quoted) {
+      cells.push(current);
+      current = "";
+    } else current += char;
+  }
+  cells.push(current);
+  return cells.map((cell) => cell.trim());
+}
+
+/** "301K", "2.5M", "1,200" and plain numbers. */
+function parseNumber(value: string | undefined): number | null {
+  if (value == null || value === "") return null;
+  const match = value.replace(/,/g, "").match(/^([\d.]+)\s*([kKmM])?$/);
+  if (!match) return null;
+  const base = Number(match[1]);
+  const unit = match[2]?.toLowerCase();
+  const scaled =
+    unit === "k" ? base * 1_000 : unit === "m" ? base * 1_000_000 : base;
+  return Number.isFinite(scaled) ? scaled : null;
+}
+
+function readSample(path: string): SampleRow[] {
   const lines = readFileSync(path, "utf8").split(/\r?\n/u).filter(Boolean);
-  const rows: Array<{ keyword: string; vidiqVolume: number }> = [];
-  for (const [index, line] of lines.entries()) {
-    if (index === 0 && /keyword/i.test(line)) continue;
-    const separator = line.lastIndexOf(",");
-    if (separator === -1) continue;
-    const keyword = normalizeYoutubeKeyword(
-      line.slice(0, separator).replace(/^"|"$/g, ""),
-    );
-    const volume = Number(line.slice(separator + 1).replace(/[^\d.]/g, ""));
-    if (!keyword || !Number.isFinite(volume)) continue;
-    rows.push({ keyword, vidiqVolume: volume });
+  const header = splitCsvLine(lines[0] ?? "").map((cell) => cell.toLowerCase());
+  const column = (name: string) => header.indexOf(name);
+  const keywordIndex = column("keyword");
+  const volumeIndex = column("vidiq_volume");
+  if (keywordIndex === -1 || volumeIndex === -1) {
+    fail("CSV header must contain keyword and vidiq_volume");
+  }
+  const competitionIndex = column("vidiq_competition");
+  const overallIndex = column("vidiq_overall");
+  const rows: SampleRow[] = [];
+  for (const line of lines.slice(1)) {
+    const cells = splitCsvLine(line);
+    const keyword = normalizeYoutubeKeyword(cells[keywordIndex] ?? "");
+    const vidiqVolume = parseNumber(cells[volumeIndex]);
+    if (!keyword || vidiqVolume == null) continue;
+    rows.push({
+      keyword,
+      vidiqVolume,
+      vidiqCompetition:
+        competitionIndex === -1 ? null : parseNumber(cells[competitionIndex]),
+      vidiqOverall:
+        overallIndex === -1 ? null : parseNumber(cells[overallIndex]),
+    });
   }
   return rows;
+}
+
+/** One YouTube SERP per keyword, scored with the row-level competition formula. */
+async function fetchCompetition(
+  keywords: string[],
+): Promise<Map<string, number | null>> {
+  const now = new Date();
+  const result = new Map<string, number | null>();
+  for (const keyword of keywords) {
+    const task = await post("/v3/serp/youtube/organic/live/advanced", {
+      keyword,
+      location_code: locationCode,
+      language_code: languageCode,
+      device: "desktop",
+      os: "windows",
+      block_depth: 20,
+    });
+    const items = ((task.result?.[0] as { items?: unknown[] } | undefined)
+      ?.items ?? []) as Array<{
+      video_id?: string | null;
+      views_count?: number | null;
+      publication_date?: string | null;
+      is_shorts?: boolean | null;
+      channel_id?: string | null;
+    }>;
+    const videos = items
+      .filter((item) => item.video_id)
+      .slice(0, 20)
+      .map((item) => ({
+        viewsCount: item.views_count ?? null,
+        subscribersCount: null,
+        publishedAt: parseRelativePublicationDate(
+          item.publication_date ?? null,
+          now,
+        ),
+        isShorts: item.is_shorts ?? false,
+        channelId: item.channel_id ?? null,
+      }));
+    result.set(keyword, computeCompetition(videos, now));
+  }
+  return result;
 }
 
 async function fetchAnchors(
@@ -189,6 +283,12 @@ async function main() {
 
   const anchors = await fetchAnchors(keywords);
   const interest = await fetchInterest(keywords, benchmark);
+  const wantsScores = sample.some(
+    (row) => row.vidiqCompetition != null || row.vidiqOverall != null,
+  );
+  const competition = wantsScores
+    ? await fetchCompetition(sample.map((row) => row.keyword))
+    : new Map<string, number | null>();
 
   const samples: CalibrationSample[] = sample.map((row) => ({
     keyword: row.keyword,
@@ -196,6 +296,9 @@ async function main() {
     anchorVolume: anchors.get(row.keyword) ?? null,
     interest: interest.get(row.keyword)?.interest ?? null,
     benchmarkInterest: interest.get(row.keyword)?.benchmarkInterest ?? null,
+    competition: competition.get(row.keyword) ?? null,
+    vidiqCompetition: row.vidiqCompetition,
+    vidiqOverall: row.vidiqOverall,
   }));
   const fit = fitYoutubeScoring(samples, benchmark);
 
