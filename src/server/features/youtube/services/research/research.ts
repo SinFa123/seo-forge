@@ -72,11 +72,20 @@ const cachedResultSchema = z.object({
       adsSearchVolume: z.number().int(),
       suggest: z.number().int(),
     }),
+    timingsMs: z.object({
+      seedVideos: z.number(),
+      candidates: z.number(),
+      anchors: z.number(),
+      rowSerps: z.number(),
+      total: z.number(),
+    }),
   }),
   fetchedAt: z.string(),
 });
 
 type Market = { locationCode: number; languageCode: string };
+
+const elapsed = (since: number) => Date.now() - since;
 
 async function fetchSeedVideoRows(
   client: DataforseoClient,
@@ -167,11 +176,32 @@ export async function research(
     suggest: 0,
   };
 
+  // Two independent chains run side by side. A live YouTube SERP takes about
+  // 14 s at DataForSEO, so the seed chain (SERP, then video info) and the row
+  // chain (Trends + suggest, Google Ads anchors, then one SERP per row) must
+  // overlap or the run takes twice as long.
+  const startedAt = Date.now();
+  const timings = {
+    seedVideos: 0,
+    candidates: 0,
+    anchors: 0,
+    rowSerps: 0,
+    total: 0,
+  };
+  const seedVideosPromise = fetchSeedVideoRows(
+    client,
+    seed,
+    market,
+    now,
+    calls,
+  ).then((rows) => {
+    timings.seedVideos = elapsed(startedAt);
+    return rows;
+  });
+
   // One single-keyword Trends request returns both the seed's interest graph
-  // (confidence signal) and its related queries (candidates). The free suggest
-  // fan-out does not depend on any of it, so all three run together.
-  const [seedVideos, seedTrends, suggestions] = await Promise.all([
-    fetchSeedVideoRows(client, seed, market, now, calls),
+  // (confidence signal) and its related queries (candidates).
+  const [seedTrends, suggestions] = await Promise.all([
     client.trends.explore({ keywords: [seed], ...market, type: "youtube" }),
     fetchSuggestionLists({ seed, ...market }),
   ]);
@@ -191,12 +221,15 @@ export async function research(
   });
   calls.suggest += candidateResult.suggestCalls;
   const candidates = candidateResult.candidates;
+  timings.candidates = elapsed(startedAt);
 
+  const anchorsStartedAt = Date.now();
   const anchors = await fetchVolumeAnchors(client, {
     ...market,
     keywords: [seed, ...candidates.map((candidate) => candidate.keyword)],
   });
   calls.adsSearchVolume += 1;
+  timings.anchors = elapsed(anchorsStartedAt);
   const seedAnchor = anchors.get(seed) ?? null;
 
   // Rows are ranked by Google anchor so the paid per-row SERPs go to the
@@ -209,13 +242,12 @@ export async function research(
     .slice(0, input.serpRowLimit)
     .map((candidate) => candidate.keyword);
 
-  const competitionByKeyword = await fetchRowCompetition(
-    client,
-    serpKeywords,
-    market,
-    now,
-    calls,
-  );
+  const rowSerpsStartedAt = Date.now();
+  const [competitionByKeyword, seedVideos] = await Promise.all([
+    fetchRowCompetition(client, serpKeywords, market, now, calls),
+    seedVideosPromise,
+  ]);
+  timings.rowSerps = elapsed(rowSerpsStartedAt);
 
   const seedVolume = estimateSearchVolume({
     anchorVolume: seedAnchor,
@@ -269,6 +301,7 @@ export async function research(
       serpRowCount: serpKeywords.length,
       seedInterest,
       apiCalls: calls,
+      timingsMs: { ...timings, total: elapsed(startedAt) },
     },
     fetchedAt: now.toISOString(),
   };

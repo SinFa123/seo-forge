@@ -78,6 +78,13 @@ export function getYoutubeResearchFixture(
         adsSearchVolume: 1,
         suggest: 36,
       },
+      timingsMs: {
+        seedVideos: 18_000,
+        candidates: 7_000,
+        anchors: 200,
+        rowSerps: 14_000,
+        total: 22_000,
+      },
     },
     fetchedAt: "2026-09-05T12:00:00.000Z",
   };

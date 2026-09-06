@@ -19,6 +19,15 @@ export type YoutubeResearchApiCalls = {
   suggest: number;
 };
 
+/** Wall-clock milliseconds per phase of one research run. */
+export type YoutubeResearchTimings = {
+  seedVideos: number;
+  candidates: number;
+  anchors: number;
+  rowSerps: number;
+  total: number;
+};
+
 export type YoutubeResearchDiagnostics = {
   candidateCount: number;
   suggestionCount: number;
@@ -30,6 +39,7 @@ export type YoutubeResearchDiagnostics = {
   /** Mean trailing Google Trends (type youtube) interest for the seed; null without signal. */
   seedInterest: number | null;
   apiCalls: YoutubeResearchApiCalls;
+  timingsMs: YoutubeResearchTimings;
 };
 
 export type YoutubeResearchResult = {

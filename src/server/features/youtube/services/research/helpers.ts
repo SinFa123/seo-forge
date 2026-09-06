@@ -8,7 +8,7 @@
  * live endpoints allow well over this; the bound mainly keeps one research run
  * from monopolising the Worker's outbound connections.
  */
-export const YOUTUBE_FETCH_CONCURRENCY = 16;
+export const YOUTUBE_FETCH_CONCURRENCY = 32;
 
 /**
  * Runs `fn` over `items` with at most `limit` promises in flight, preserving

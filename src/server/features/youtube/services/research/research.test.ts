@@ -208,6 +208,13 @@ describe("youtube research", () => {
           adsSearchVolume: 0,
           suggest: 0,
         },
+        timingsMs: {
+          seedVideos: 0,
+          candidates: 0,
+          anchors: 0,
+          rowSerps: 0,
+          total: 0,
+        },
       },
       fetchedAt: "2026-09-05T00:00:00.000Z",
     };
