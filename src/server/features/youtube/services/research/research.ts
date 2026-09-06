@@ -27,7 +27,7 @@ import {
   YOUTUBE_CACHE_TTL,
   readCached,
 } from "./cache";
-import { generateCandidates } from "./candidates";
+import { fetchSuggestionLists, generateCandidates } from "./candidates";
 import { YOUTUBE_FETCH_CONCURRENCY, mapWithConcurrency } from "./helpers";
 import { buildVideoRow, getVideoInfo, toCompetitionInput } from "./video-info";
 import {
@@ -168,10 +168,12 @@ export async function research(
   };
 
   // One single-keyword Trends request returns both the seed's interest graph
-  // (confidence signal) and its related queries (candidates).
-  const [seedVideos, seedTrends] = await Promise.all([
+  // (confidence signal) and its related queries (candidates). The free suggest
+  // fan-out does not depend on any of it, so all three run together.
+  const [seedVideos, seedTrends, suggestions] = await Promise.all([
     fetchSeedVideoRows(client, seed, market, now, calls),
     client.trends.explore({ keywords: [seed], ...market, type: "youtube" }),
+    fetchSuggestionLists({ seed, ...market }),
   ]);
   calls.trends += 1;
   const seedInterest = meanRecentInterest(seedTrends.graph, seed);
@@ -185,6 +187,7 @@ export async function research(
     seed,
     ...market,
     trendsRelated,
+    suggestions,
   });
   calls.suggest += candidateResult.suggestCalls;
   const candidates = candidateResult.candidates;

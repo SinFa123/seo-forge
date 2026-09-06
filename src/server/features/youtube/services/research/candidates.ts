@@ -61,6 +61,31 @@ function buildSuggestTerms(seed: string): string[] {
   ];
 }
 
+type SuggestionLists = { seed: string; lists: string[][] };
+
+/**
+ * The free suggest fan-out (seed, question prefixes, seed + a-z). Independent
+ * of every paid call, so the orchestration starts it alongside the seed SERP.
+ */
+export async function fetchSuggestionLists(input: {
+  seed: string;
+  locationCode: number;
+  languageCode: string;
+}): Promise<SuggestionLists> {
+  const seed = normalizeYoutubeKeyword(input.seed);
+  const lists = await mapWithConcurrency(
+    buildSuggestTerms(seed),
+    YOUTUBE_FETCH_CONCURRENCY,
+    (term) =>
+      fetchYoutubeSuggestions({
+        term,
+        languageCode: input.languageCode,
+        locationCode: input.locationCode,
+      }),
+  );
+  return { seed, lists };
+}
+
 type GenerateCandidatesInput = {
   seed: string;
   locationCode: number;
@@ -68,6 +93,8 @@ type GenerateCandidatesInput = {
   /** Google Trends related queries for the seed (top first, then rising). */
   trendsRelated: { top: string[]; rising: string[] };
   limit?: number;
+  /** Pre-fetched suggest results; fetched here when omitted. */
+  suggestions?: SuggestionLists;
 };
 
 type GenerateCandidatesResult = {
@@ -86,17 +113,11 @@ export async function generateCandidates(
 ): Promise<GenerateCandidatesResult> {
   const seed = normalizeYoutubeKeyword(input.seed);
   const limit = input.limit ?? YOUTUBE_CANDIDATE_LIMIT;
-  const terms = buildSuggestTerms(seed);
-  const suggestionLists = await mapWithConcurrency(
-    terms,
-    YOUTUBE_FETCH_CONCURRENCY,
-    (term) =>
-      fetchYoutubeSuggestions({
-        term,
-        languageCode: input.languageCode,
-        locationCode: input.locationCode,
-      }),
-  );
+  const suggestionLists = (
+    input.suggestions?.seed === seed
+      ? input.suggestions
+      : await fetchSuggestionLists(input)
+  ).lists;
   const suggestionCount = suggestionLists.reduce(
     (sum, list) => sum + list.length,
     0,
@@ -137,5 +158,9 @@ export async function generateCandidates(
     });
   }
 
-  return { candidates, suggestionCount, suggestCalls: terms.length };
+  return {
+    candidates,
+    suggestionCount,
+    suggestCalls: suggestionLists.length,
+  };
 }

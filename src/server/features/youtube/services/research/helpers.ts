@@ -3,8 +3,12 @@
 // lives here next to its only callers. Nothing in this file touches I/O, so
 // the candidate generator can import it without pulling in Workers bindings.
 
-/** Parallel DataForSEO / Data API calls in flight at once. */
-export const YOUTUBE_FETCH_CONCURRENCY = 8;
+/**
+ * Parallel DataForSEO / Data API / suggest calls in flight at once. DataForSEO
+ * live endpoints allow well over this; the bound mainly keeps one research run
+ * from monopolising the Worker's outbound connections.
+ */
+export const YOUTUBE_FETCH_CONCURRENCY = 16;
 
 /**
  * Runs `fn` over `items` with at most `limit` promises in flight, preserving
