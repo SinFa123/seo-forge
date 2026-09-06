@@ -930,9 +930,9 @@ Phase 5
 
 Phase 6
 
-- [ ] 6.1 Calibration sample supplied (waiting on the user's VidIQ export: header row with `keyword,vidiq_volume` and optionally `vidiq_competition,vidiq_overall`; 50 to 200 rows across volume tiers, ideally including "how to tie a tie"; values like "301K" are accepted)
+- [x] 6.1 Calibration sample supplied: `docs/seoforge/calibration/vidiq-keywords-2026-09-06.csv`, VidIQ app export, 182 keywords (75 under 10K, 56 between 10K and 100K, 51 above 100K; 23 volumes are VidIQ upper bounds like "<750"; competition is a label from Very low to Very high; the benchmark keyword is absent)
 - [x] 6.2 Calibration script (`scripts/youtube-volume-calibration.ts` over the pure `fitYoutubeScoring` in `src/shared/youtube-calibration.ts`, 3 tests). When the export carries VidIQ competition and overall scores it also buys one YouTube SERP per keyword (0.002 USD) and reports Spearman rank correlations of our competition and overall against VidIQ's. Not yet run live: needs the CSV (about 0.09 USD per 700 keywords plus 0.011 USD per 4 keywords plus 0.002 USD per keyword for scores).
-- [ ] 6.3 Constants updated and results recorded (after 6.1)
+- [ ] 6.3 Constants updated and results recorded. Run on 2026-09-06 (0.96 USD, full fit in `docs/seoforge/calibration/fit-2026-09-06.json`): 154 of 182 keywords have a Google Ads anchor (the 28 without are adult, music, or brand terms), 140 have a Trends signal. Findings: VidIQ volume is about 34x Google volume at the median but the ratio falls steeply with size (median 100x below 1K Google searches, 1.2x above 100K), so the linear "share" model in section 5 cannot reproduce VidIQ's scale at both ends; Trends scaling does not improve rank agreement (Spearman 0.464 with it, 0.459 without); our competition and overall rank weakly against VidIQ's (0.14 and 0.09). On the 138 anchored, unbounded rows a power law `estimate = 4815 * anchor^0.303` gives Spearman 0.39, median ratio 1.30, 37% within 3x and 76% within 10x, versus 28% and 54% for the best linear share (33.6) and 9% and 23% for the version 1 constants. DECISION PENDING with the user: adopt the power-law mapping (Trends kept only as a confidence signal) or keep the section 5 model with share 33.6.
 - [ ] Phase 6 exit gate passed (blocked on 6.1)
 
 Phase 7
