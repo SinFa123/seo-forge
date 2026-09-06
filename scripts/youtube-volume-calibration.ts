@@ -64,7 +64,11 @@ type DataforseoTask = {
 
 let totalCost = 0;
 
-async function post(path: string, body: unknown): Promise<DataforseoTask> {
+async function post(
+  path: string,
+  body: unknown,
+  options: { allowNoResults?: boolean } = {},
+): Promise<DataforseoTask> {
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: {
@@ -78,6 +82,14 @@ async function post(path: string, body: unknown): Promise<DataforseoTask> {
   if (!task)
     fail(`DataForSEO returned no task for ${path} (HTTP ${response.status})`);
   totalCost += task.cost ?? 0;
+  // A keyword with no YouTube results comes back as task 40102; for the
+  // competition SERPs that just means "unscored", not a failure.
+  if (
+    options.allowNoResults &&
+    task.status_message?.toLowerCase().includes("no search results")
+  ) {
+    return { ...task, result: [] };
+  }
   if (task.status_code !== 20000) {
     fail(
       `DataForSEO ${path} failed: ${task.status_code} ${task.status_message}`,
@@ -182,14 +194,18 @@ async function fetchCompetition(
   const now = new Date();
   const result = new Map<string, number | null>();
   for (const keyword of keywords) {
-    const task = await post("/v3/serp/youtube/organic/live/advanced", {
-      keyword,
-      location_code: locationCode,
-      language_code: languageCode,
-      device: "desktop",
-      os: "windows",
-      block_depth: 20,
-    });
+    const task = await post(
+      "/v3/serp/youtube/organic/live/advanced",
+      {
+        keyword,
+        location_code: locationCode,
+        language_code: languageCode,
+        device: "desktop",
+        os: "windows",
+        block_depth: 20,
+      },
+      { allowNoResults: true },
+    );
     const items = ((task.result?.[0] as { items?: unknown[] } | undefined)
       ?.items ?? []) as Array<{
       video_id?: string | null;
