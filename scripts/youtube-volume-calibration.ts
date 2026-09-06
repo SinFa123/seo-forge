@@ -101,8 +101,11 @@ async function post(
   });
   const payload = (await response.json()) as { tasks?: DataforseoTask[] };
   const task = payload.tasks?.[0];
-  if (!task)
-    fail(`DataForSEO returned no task for ${path} (HTTP ${response.status})`);
+  if (!task) {
+    throw new Error(
+      `DataForSEO returned no task for ${path} (HTTP ${response.status})`,
+    );
+  }
   totalCost += task.cost ?? 0;
   if (task.status_code === 20000 || options.allowNoResults) {
     writeFileSync(cachePath, JSON.stringify(task));
