@@ -23,6 +23,8 @@ import {
 } from "@/client/lib/posthog";
 import { NotFound } from "@/client/components/NotFound";
 import appCss from "@/client/styles/app.css?url";
+// SEO Forge: brand tokens layered over upstream's theme (docs/seoforge/PLAN.md).
+import seoforgeThemeCss from "@/client/styles/seoforge-theme.css?url";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { Toaster } from "sonner";
@@ -67,6 +69,7 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "stylesheet", href: seoforgeThemeCss },
       {
         rel: "apple-touch-icon",
         sizes: "180x180",

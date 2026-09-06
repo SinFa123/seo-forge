@@ -360,6 +360,11 @@ package.json                                    EDIT add db:youtube:* scripts; c
 docker-entrypoint.sh                            EDIT run db:youtube:migrate:local after db:migrate:local
 .prettierignore                                 EDIT ignore drizzle-youtube/ and drizzle-pg-youtube/
 
+Brand theme (2026-09-06, user request):
+src/client/styles/seoforge-theme.css              NEW  daisyUI token overrides for "openseo" and "openseo-dark": Sinfa warm neutrals + Calm Green accent
+public/seoforge-logo.svg                        NEW  source of every icon asset (ascending bars + spark on a green rounded square)
+public/transparent-logo.png, favicons, android-chrome, apple-touch-icon  EDIT rendered from the SVG with headless Chromium; favicon.ico is a PNG-in-ICO container
+
 Brand rename (Phase 0):
 src/routes/__root.tsx                           EDIT title
 src/client/layout/AppShellParts.tsx             EDIT two setup strings
@@ -856,27 +861,28 @@ Every upstream file we have modified.
 Keep the line counts honest.
 Target: fewer than fifteen files, each under ten changed lines.
 
-| File                                               | Why                                                        | Lines  | Phase    | Status  |
-| -------------------------------------------------- | ---------------------------------------------------------- | ------ | -------- | ------- |
-| `src/server/lib/dataforseo/client.ts`              | register youtube and trends fetchers in the metered client | +14    | 1.4      | done    |
-| `src/server/mcp/server.ts`                         | import and register four tools; brand name and title       | +10, 4 | 3.2, 0.6 | done    |
-| `src/client/navigation/items.ts`                   | nav entry                                                  |        | 4.2      | planned |
-| `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                         |        | 4.4      | planned |
-| `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                       |        | 5.2      | planned |
-| `src/server/features/sam/samSkills.test.ts`        | "youtube-research" in the expected public skill list       | +2     | 5.3      | done    |
-| `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                       | +3     | 1.6      | done    |
-| `.env.example`                                     | document the key                                           | +6     | 1.6      | done    |
-| `knip.jsonc`                                       | drizzle youtube configs as entries                         | +3     | 1.8      | done    |
-| `package.json`                                     | db:youtube scripts                                         | +4     | 1.8      | done    |
-| `docker-entrypoint.sh`                             | run the youtube migration                                  | +2     | 1.8      | done    |
-| `.prettierignore`                                  | ignore generated youtube migration metadata                | +3     | 1.8      | done    |
-| `src/routes/__root.tsx`                            | brand title                                                | 2      | 0.6      | done    |
-| `src/client/layout/AppShellParts.tsx`              | brand strings                                              | 3      | 0.6      | done    |
-| `src/client/features/auth/AuthPage.tsx`            | brand alt text                                             | 2      | 0.6      | done    |
-| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                 | 5      | 0.6      | done    |
-| `public/site.webmanifest`                          | brand name                                                 | 2      | 0.6      | done    |
-| `src/client/components/Sidebar.tsx`                | sidebar brand text                                         | 2      | 0.6      | done    |
-| `src/client/layout/AppShell.tsx`                   | mobile header brand text                                   | 2      | 0.6      | done    |
+| File                                               | Why                                                            | Lines  | Phase      | Status  |
+| -------------------------------------------------- | -------------------------------------------------------------- | ------ | ---------- | ------- |
+| `src/server/lib/dataforseo/client.ts`              | register youtube and trends fetchers in the metered client     | +14    | 1.4        | done    |
+| `src/server/mcp/server.ts`                         | import and register four tools; brand name and title           | +10, 4 | 3.2, 0.6   | done    |
+| `src/client/navigation/items.ts`                   | nav entry                                                      |        | 4.2        | planned |
+| `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                             |        | 4.4        | planned |
+| `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                           |        | 5.2        | planned |
+| `src/server/features/sam/samSkills.test.ts`        | "youtube-research" in the expected public skill list           | +2     | 5.3        | done    |
+| `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                           | +3     | 1.6        | done    |
+| `.env.example`                                     | document the key                                               | +6     | 1.6        | done    |
+| `knip.jsonc`                                       | drizzle youtube configs as entries                             | +3     | 1.8        | done    |
+| `package.json`                                     | db:youtube scripts                                             | +4     | 1.8        | done    |
+| `docker-entrypoint.sh`                             | run the youtube migration                                      | +2     | 1.8        | done    |
+| `.prettierignore`                                  | ignore generated youtube migration metadata                    | +3     | 1.8        | done    |
+| `src/routes/__root.tsx`                            | brand title; import of `seoforge-theme.css`                    | 2, +3  | 0.6, brand | done    |
+| `src/client/layout/AppShellParts.tsx`              | brand strings                                                  | 3      | 0.6        | done    |
+| `src/client/features/auth/AuthPage.tsx`            | brand alt text                                                 | 2      | 0.6        | done    |
+| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                     | 5      | 0.6        | done    |
+| `public/site.webmanifest`                          | brand name; theme and background colours                       | 4      | 0.6, brand | done    |
+| `src/client/components/Sidebar.tsx`                | sidebar brand text and logo mark                               | 4      | 0.6, brand | done    |
+| `src/client/layout/AppShell.tsx`                   | mobile header brand text and logo mark                         | 6      | 0.6, brand | done    |
+| `public/*.png`, `public/favicon.ico`               | SEO Forge logo assets rendered from `public/seoforge-logo.svg` | binary | brand      | done    |
 
 ## 9. Status
 

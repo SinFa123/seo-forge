@@ -181,7 +181,11 @@ function MobileTopBar({
       >
         <Menu className="h-5 w-5" />
       </button>
-      <Link to="/" className="ml-1 font-semibold text-base-content">
+      <Link
+        to="/"
+        className="ml-1 flex items-center gap-2 font-semibold text-base-content"
+      >
+        <img src="/transparent-logo.png" alt="" className="size-5 rounded" />
         {BRAND_NAME}
       </Link>
     </div>

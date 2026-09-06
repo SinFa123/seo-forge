@@ -130,8 +130,13 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
         <Link
           to="/"
           onClick={onNavigate}
-          className="text-base font-semibold text-base-content"
+          className="flex items-center gap-2 text-base font-semibold text-base-content"
         >
+          <img
+            src="/transparent-logo.png"
+            alt=""
+            className="size-6 rounded-md"
+          />
           {BRAND_NAME}
         </Link>
         {onClose ? (

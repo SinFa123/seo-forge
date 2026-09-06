@@ -1,0 +1,48 @@
+/* SEO Forge brand theme. Overrides the daisyUI theme tokens that upstream
+   defines in app.css (themes "openseo" and "openseo-dark") with the Sinfa
+   palette: warm off-white neutrals and one Calm Green accent. Loaded after
+   app.css from src/routes/__root.tsx. Only tokens live here; components keep
+   upstream's classes, so the whole app follows and upstream UI merges stay
+   conflict-free. */
+
+[data-theme="openseo"] {
+  --color-base-100: #ffffff;
+  --color-base-200: #fbfaf8;
+  --color-base-300: #e7e3dc;
+  --color-base-content: #1a1a18;
+  --color-primary: #4e9a6b;
+  --color-primary-content: #ffffff;
+  --color-secondary: #438a5e;
+  --color-secondary-content: #ffffff;
+  --color-accent: #4e9a6b;
+  --color-accent-content: #ffffff;
+  --color-neutral: #26252a;
+  --color-neutral-content: #fbfaf8;
+  --color-success: #3e8e5a;
+  --color-success-content: #ffffff;
+  --color-warning: #b8862e;
+  --color-warning-content: #ffffff;
+  --color-error: #c0503e;
+  --color-error-content: #ffffff;
+}
+
+[data-theme="openseo-dark"] {
+  --color-base-100: #1f1e22;
+  --color-base-200: #17161a;
+  --color-base-300: #34333a;
+  --color-base-content: #f3f1ec;
+  --color-primary: #5fae7d;
+  --color-primary-content: #17161a;
+  --color-secondary: #4e9a6b;
+  --color-secondary-content: #17161a;
+  --color-accent: #5fae7d;
+  --color-accent-content: #17161a;
+  --color-neutral: #e7e3dc;
+  --color-neutral-content: #1f1e22;
+  --color-success: #4e9a6b;
+  --color-success-content: #17161a;
+  --color-warning: #c9964a;
+  --color-warning-content: #17161a;
+  --color-error: #d2685a;
+  --color-error-content: #17161a;
+}
