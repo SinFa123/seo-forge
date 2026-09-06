@@ -1,12 +1,10 @@
-import { Link } from "@tanstack/react-router";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useResolvedKeywordLocation } from "@/client/features/keywords/state/keywordControllerInternals";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { BILLING_ROUTE } from "@/shared/billing";
 import type { YoutubeKeywordKind, YoutubeKeywordRow } from "@/shared/youtube";
 import type {
   YoutubeSortDir,
@@ -31,14 +29,12 @@ import {
 } from "./YoutubeEmptyState";
 import { YoutubeFetchedLine as FetchedLine } from "./YoutubeFetchedLine";
 import { YoutubeKeywordsResults } from "./YoutubeKeywordsResults";
-import {
-  YoutubeLoadingState,
-  YoutubeVideosLoadingState,
-} from "./YoutubeLoadingState";
+import { YoutubeLoadingState } from "./YoutubeLoadingState";
 import { YoutubeOverviewCards } from "./YoutubeOverviewCards";
 import { YoutubeSavedKeywords } from "./YoutubeSavedKeywords";
 import { YoutubeSearchBar } from "./YoutubeSearchBar";
-import { YoutubeVideosGrid } from "./YoutubeVideosGrid";
+import { YoutubeChannelsGrid } from "./YoutubeChannelsGrid";
+import { ErrorCard, VideosContent } from "./YoutubeResultStates";
 
 // SEO Forge: the YouTube Research tab. Laid out like Keyword Research (header,
 // search card, results) with three URL-driven sub-tabs: Keywords, Videos,
@@ -53,6 +49,7 @@ type Props = {
 const TABS: Array<{ value: YoutubeTab; label: string }> = [
   { value: "keywords", label: "Keywords" },
   { value: "videos", label: "Videos" },
+  { value: "channels", label: "Channels" },
   { value: "saved", label: "Saved" },
 ];
 
@@ -105,7 +102,7 @@ export function YoutubeResearchPage({
     keyword: routeState.keyword,
     locationCode,
     languageCode: routeState.languageCode,
-    active: routeState.tab === "videos",
+    active: routeState.tab === "videos" || routeState.tab === "channels",
   });
 
   const form = useYoutubeSearchForm(
@@ -244,6 +241,26 @@ export function YoutubeResearchPage({
           <YoutubeSavedKeywords projectId={projectId} />
         ) : !research.hasSearched ? (
           <YoutubeSearchHistoryState projectId={projectId} {...history} />
+        ) : routeState.tab === "channels" ? (
+          <VideosContent
+            isLoading={videos.isLoading}
+            error={videos.error}
+            retry={() => void videos.retry()}
+            data={videos.data}
+            isRefreshing={videos.isRefreshing}
+            onRefresh={() => videos.refresh()}
+            render={(data) => (
+              <YoutubeChannelsGrid
+                data={data}
+                view={routeState.channelView}
+                onViewChange={(view) =>
+                  setSearchParams({
+                    cv: view === DEFAULT_YOUTUBE_SEARCH.cv ? undefined : view,
+                  })
+                }
+              />
+            )}
+          />
         ) : routeState.tab === "videos" ? (
           <VideosContent
             isLoading={videos.isLoading}
@@ -334,70 +351,6 @@ export function YoutubeResearchPage({
           </div>
         ) : null}
       </div>
-    </div>
-  );
-}
-
-function ErrorCard({
-  message,
-  isCreditsError,
-  retry,
-}: {
-  message: string;
-  isCreditsError: boolean;
-  retry: () => void;
-}) {
-  return (
-    <div className="flex-1 flex items-center justify-center pt-1">
-      <div className="w-full max-w-xl rounded-xl border border-error/30 bg-error/10 p-5 text-error space-y-3">
-        <div className="flex items-start gap-2">
-          <AlertCircle className="mt-0.5 size-4 shrink-0" />
-          <p className="text-sm">{message}</p>
-        </div>
-        {isCreditsError ? (
-          <Link to={BILLING_ROUTE} className="btn btn-sm">
-            Go to Billing
-          </Link>
-        ) : (
-          <button className="btn btn-sm" onClick={retry}>
-            Try again
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function VideosContent({
-  isLoading,
-  error,
-  retry,
-  data,
-  isRefreshing,
-  onRefresh,
-}: {
-  isLoading: boolean;
-  error: string | null;
-  retry: () => void;
-  data: ReturnType<typeof useYoutubeVideosData>["data"];
-  isRefreshing: boolean;
-  onRefresh: () => void;
-}) {
-  if (isLoading) return <YoutubeVideosLoadingState />;
-  if (error) {
-    return <ErrorCard message={error} isCreditsError={false} retry={retry} />;
-  }
-  if (!data) return null;
-  return (
-    <div className="flex flex-col gap-2">
-      <FetchedLine
-        label="Fetched"
-        fetchedAt={data.fetchedAt}
-        cost="about 0.13 USD"
-        isRefreshing={isRefreshing}
-        onRefresh={onRefresh}
-      />
-      <YoutubeVideosGrid data={data} />
     </div>
   );
 }

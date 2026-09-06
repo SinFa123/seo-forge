@@ -1,6 +1,7 @@
 import type { YoutubeKeywordKind } from "@/shared/youtube";
 import {
   YOUTUBE_SERP_ROW_LIMIT_DEFAULT,
+  type YoutubeChannelView,
   type YoutubeSearchParams,
   type YoutubeSortDir,
   type YoutubeSortField,
@@ -23,6 +24,7 @@ export const DEFAULT_YOUTUBE_SEARCH = {
   order: "desc",
   rows: YOUTUBE_SERP_ROW_LIMIT_DEFAULT,
   kind: undefined,
+  cv: "all",
 } as const;
 
 export type YoutubeRouteState = {
@@ -34,6 +36,7 @@ export type YoutubeRouteState = {
   sortDir: YoutubeSortDir;
   serpRowLimit: number;
   kind: YoutubeKeywordKind | undefined;
+  channelView: YoutubeChannelView;
 };
 
 export type YoutubeSearchUpdate = Partial<YoutubeSearchParams>;
@@ -55,5 +58,6 @@ export function getYoutubeRouteState(
     sortDir: search.order ?? DEFAULT_YOUTUBE_SEARCH.order,
     serpRowLimit: search.rows ?? DEFAULT_YOUTUBE_SEARCH.rows,
     kind: search.kind,
+    channelView: search.cv ?? DEFAULT_YOUTUBE_SEARCH.cv,
   };
 }

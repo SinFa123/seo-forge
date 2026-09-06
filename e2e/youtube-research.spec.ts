@@ -31,6 +31,17 @@ test.describe("YouTube Research", () => {
       .toBe("videos");
     await expect(page.getByTestId("youtube-video-card")).toHaveCount(12);
 
+    await page.getByRole("tab", { name: "Channels" }).click();
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("tab"))
+      .toBe("channels");
+    await expect(page.getByTestId("youtube-channel-card")).toHaveCount(4);
+    await page.getByRole("button", { name: /^Breakout/ }).click();
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("cv"))
+      .toBe("breakout");
+    await expect(page.getByTestId("youtube-channel-card")).toHaveCount(1);
+
     await page.goto(
       `/p/${projectId}/youtube?q=sourdough%20bread&loc=2840&kind=question`,
     );

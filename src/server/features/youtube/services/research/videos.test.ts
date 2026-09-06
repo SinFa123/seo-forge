@@ -113,6 +113,10 @@ describe("youtube videos", () => {
 
     expect(result.dataApiStatus).toBe("ok");
     expect(result.rows).toHaveLength(2);
+    expect(result.channels.map((c) => [c.channelId, c.breakout])).toEqual([
+      ["chan_1", true],
+      ["chan_2", false],
+    ]);
     expect(result.rows[0]).toMatchObject({
       rank: 1,
       videoId: "top",
@@ -134,7 +138,7 @@ describe("youtube videos", () => {
     );
     expect(mocks.setCached).toHaveBeenCalledWith(
       expect.stringContaining("youtube:videos"),
-      result,
+      expect.objectContaining({ rows: result.rows }),
       YOUTUBE_CACHE_TTL.videos,
     );
   });
@@ -152,7 +156,7 @@ describe("youtube videos", () => {
     expect(mocks.getChannelRecentUploads).not.toHaveBeenCalled();
     expect(mocks.setCached).toHaveBeenCalledWith(
       expect.stringContaining('"dataApiConfigured":false'),
-      result,
+      expect.objectContaining({ rows: result.rows }),
       YOUTUBE_CACHE_TTL.videos,
     );
   });

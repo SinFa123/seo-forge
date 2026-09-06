@@ -18,6 +18,7 @@ A user enters a keyword and gets:
   Columns: keyword, search volume, competition, overall, number of words.
   Each row is tagged as related, matching, or question.
 - A Videos sub-tab for the same keyword showing the top-ranking videos with thumbnail, channel, publish date, views, views per hour, and a channel-relative multiplier (for example "35x", meaning the video has 35 times the median views of that channel's recent uploads).
+- A Channels sub-tab listing the distinct channels behind those videos with subscribers and views, and a Breakout filter for channels whose ranking video far outperformed the channel's usual reach.
 - A Saved sub-tab of YouTube keywords the user chose to keep.
 
 The same capability is exposed to AI agents through MCP tools and an agent skill, so it can be used with or without the UI.

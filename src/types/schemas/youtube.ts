@@ -30,7 +30,9 @@ export const youtubeSavedSortFields = [
   "wordCount",
 ] as const;
 
-export const youtubeTabs = ["keywords", "videos", "saved"] as const;
+export const youtubeTabs = ["keywords", "videos", "channels", "saved"] as const;
+export const youtubeChannelViews = ["all", "breakout"] as const;
+export type YoutubeChannelView = (typeof youtubeChannelViews)[number];
 export type YoutubeTab = (typeof youtubeTabs)[number];
 
 export const youtubeSortDirs = ["asc", "desc"] as const;
@@ -92,6 +94,8 @@ export const youtubeVideoRowSchema = z.object({
   channelId: z.string().nullable(),
   channelName: z.string().nullable(),
   channelUrl: z.string().nullable(),
+  // Added after the first cached results; missing means unknown, not stale.
+  channelLogoUrl: z.string().nullable().default(null),
   publishedAt: z.string().nullable(),
   publishedLabel: z.string().nullable(),
   viewsCount: z.number().nullable(),
@@ -139,6 +143,8 @@ export const youtubeSearchSchema = z.object({
     .max(YOUTUBE_SERP_ROW_LIMIT_MAX)
     .optional(),
   kind: z.enum(YOUTUBE_KEYWORD_KINDS).optional(),
+  /** Channels sub-tab filter ("cv": Backlinks already owns a `view` param). */
+  cv: z.enum(youtubeChannelViews).optional(),
 });
 
 export type ResearchYoutubeKeywordsInput = z.infer<

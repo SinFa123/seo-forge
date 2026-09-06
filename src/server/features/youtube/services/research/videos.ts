@@ -16,6 +16,7 @@ import {
 } from "@/shared/youtube";
 import type { ResolvedGetYoutubeVideosInput } from "@/types/schemas/youtube";
 import { youtubeVideoRowSchema } from "@/types/schemas/youtube";
+import { summarizeYoutubeChannels } from "@/shared/youtube-channels";
 import type {
   YoutubeDataApiStatus,
   YoutubeVideosResult,
@@ -112,7 +113,10 @@ export async function getVideos(
   const cached = input.refresh
     ? null
     : await readCached(cacheKey, cachedResultSchema);
-  if (cached) return cached;
+  // Channels are derived from the rows, so the cache holds only the rows.
+  if (cached) {
+    return { ...cached, channels: summarizeYoutubeChannels(cached.rows) };
+  }
 
   const client = createDataforseoClient(billingCustomer);
   const now = new Date();
@@ -148,7 +152,7 @@ export async function getVideos(
     }),
   );
 
-  const result: YoutubeVideosResult = {
+  const cacheable = {
     keyword,
     rows: rows.map((row) => {
       const stats = row.channelId ? statsByChannel.get(row.channelId) : null;
@@ -166,6 +170,10 @@ export async function getVideos(
     fetchedAt: now.toISOString(),
   };
 
-  await setCached(cacheKey, result, YOUTUBE_CACHE_TTL.videos);
+  await setCached(cacheKey, cacheable, YOUTUBE_CACHE_TTL.videos);
+  const result: YoutubeVideosResult = {
+    ...cacheable,
+    channels: summarizeYoutubeChannels(cacheable.rows),
+  };
   return result;
 }

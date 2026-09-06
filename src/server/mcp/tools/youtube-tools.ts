@@ -13,12 +13,13 @@ import {
   locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
-import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
-import { resolveMarket } from "@/shared/keyword-locations";
+import { formatMcpTable } from "@/server/mcp/table";
 import {
-  YOUTUBE_KEYWORD_COLUMNS,
-  YOUTUBE_VIDEO_COLUMNS,
-} from "@/shared/youtube-columns";
+  CHANNEL_COLUMNS,
+  KEYWORD_COLUMNS,
+  VIDEO_COLUMNS,
+} from "@/server/mcp/tools/youtube-tools-columns";
+import { resolveMarket } from "@/shared/keyword-locations";
 import type { YoutubeKeywordRow } from "@/shared/youtube";
 import {
   YOUTUBE_SERP_ROW_LIMIT_DEFAULT,
@@ -37,19 +38,6 @@ import {
 
 const VOLUME_CAVEAT =
   'YouTube publishes no search volume: `searchVolume` is an ESTIMATE (Google Ads volume mapped through a power law calibrated against VidIQ; Google Trends only sets the confidence of the seed) and every row carries `volumeConfidence` (high / medium / low; low means no Google anchor and is shown as "< 10"). Report volumes as estimates and mention the confidence.';
-
-/** Shared column definitions rendered through the MCP table formatter. */
-function toMcpColumns<Row>(
-  columns: readonly { label: string; format: (row: Row) => string }[],
-): McpTableColumn<Row>[] {
-  return columns.map((column) => ({
-    header: column.label,
-    value: (row) => column.format(row),
-  }));
-}
-
-const KEYWORD_COLUMNS = toMcpColumns(YOUTUBE_KEYWORD_COLUMNS);
-const VIDEO_COLUMNS = toMcpColumns(YOUTUBE_VIDEO_COLUMNS);
 
 const seedSchema = z.object({
   seed: z.string().min(1).max(200).describe("Seed keyword to research."),
@@ -245,11 +233,12 @@ export const getYoutubeVideosTool = {
   name: "get_youtube_videos",
   config: {
     title: "Get top YouTube videos",
-    description: `The videos currently ranking on YouTube for a keyword: title, channel, publish date, views, likes, comments, duration, Shorts flag, average views per hour since publish, subscriber count, and a channel multiplier (video views divided by the median of the channel's other recent uploads, e.g. 35x means an outlier for that channel). Charges about 0.002 USD per 20 results plus 0.006 USD per video for video info; the result is kept until refreshed (fetchedAt says when) and the keyword research seed's 20 videos are usually already cached. A call that fails at DataForSEO before returning results is not charged. The channel multiplier needs the optional YouTube Data API key on the server; when \`dataApiStatus\` is not "ok" the multiplier is null and the response says why. Use research_youtube_keywords for keyword metrics.`,
+    description: `The videos currently ranking on YouTube for a keyword, plus the distinct channels behind them (subscribers, views across their ranking videos, breakout flag): title, channel, publish date, views, likes, comments, duration, Shorts flag, average views per hour since publish, subscriber count, and a channel multiplier (video views divided by the median of the channel's other recent uploads, e.g. 35x means an outlier for that channel). Charges about 0.002 USD per 20 results plus 0.006 USD per video for video info; the result is kept until refreshed (fetchedAt says when) and the keyword research seed's 20 videos are usually already cached. A call that fails at DataForSEO before returning results is not charged. The channel multiplier needs the optional YouTube Data API key on the server; when \`dataApiStatus\` is not "ok" the multiplier is null and the response says why. Use research_youtube_keywords for keyword metrics.`,
     inputSchema: videosInputSchema,
     outputSchema: {
       keyword: z.string(),
       rows: z.array(looseObjectOutputSchema),
+      channels: z.array(looseObjectOutputSchema),
       dataApiStatus: z.enum(["ok", "not_configured", "error"]),
       fetchedAt: z.string(),
       ...optionalMetaOutputSchema,
@@ -284,7 +273,7 @@ export const getYoutubeVideosTool = {
     const text =
       data.rows.length === 0
         ? `No YouTube results for "${data.keyword}".`
-        : `Top ${data.rows.length} YouTube videos for "${data.keyword}":\n${formatMcpTable(data.rows, VIDEO_COLUMNS)}\n\nAvg views/hr = lifetime average since publish (one snapshot, not a live rate); vs channel = views relative to the channel's median recent upload.${statusNote}`;
+        : `Top ${data.rows.length} YouTube videos for "${data.keyword}":\n${formatMcpTable(data.rows, VIDEO_COLUMNS)}\n\nChannels behind these videos (${data.channels.filter((c) => c.breakout).length} breakout):\n${formatMcpTable(data.channels, CHANNEL_COLUMNS)}\n\nAvg views/hr = lifetime average since publish (one snapshot, not a live rate); vs channel = views relative to the channel's median recent upload; Breakout = a ranking video has 3x the channel's median views, or, without the Data API, more views than the channel has subscribers.${statusNote}`;
 
     return mcpResponse({
       text,
@@ -297,6 +286,7 @@ export const getYoutubeVideosTool = {
       structuredContent: {
         keyword: data.keyword,
         rows: data.rows,
+        channels: data.channels,
         dataApiStatus: data.dataApiStatus,
         fetchedAt: data.fetchedAt,
       },

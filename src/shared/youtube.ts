@@ -51,6 +51,7 @@ export type YoutubeVideoRow = {
   channelId: string | null;
   channelName: string | null;
   channelUrl: string | null;
+  channelLogoUrl: string | null;
   /** ISO-8601 publish time when known exactly (video info), else null. */
   publishedAt: string | null;
   /** YouTube's relative label ("1 year ago"); always available from the SERP. */
@@ -111,6 +112,13 @@ export const YOUTUBE_SCORING = {
   OVERALL_VOLUME_UPPER_BOUND: 1_000_000,
   /** Minimum other uploads needed for a channel multiplier. */
   MIN_CHANNEL_SAMPLE: 5,
+  /**
+   * A channel "breaks out" for a keyword when one of its ranking videos has
+   * at least this many times the channel's median views, or, without the Data
+   * API, when a ranking video's views reach this multiple of the channel's
+   * subscriber count.
+   */
+  BREAKOUT: { channelMultiplier: 3, viewsPerSubscriber: 1 },
 } as const;
 
 // ---------------------------------------------------------------------------

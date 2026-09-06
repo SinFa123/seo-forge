@@ -30,6 +30,7 @@ const videoInfoSnapshotSchema = z.object({
   channelId: z.string().nullable(),
   channelName: z.string().nullable(),
   channelUrl: z.string().nullable(),
+  channelLogoUrl: z.string().nullable().default(null),
   /** Exact publish time as ISO-8601 (video info `timestamp`). */
   publishedAt: z.string().nullable(),
   viewsCount: z.number().nullable(),
@@ -60,6 +61,7 @@ function toVideoInfoSnapshot(
     channelId: item.channel_id ?? null,
     channelName: item.channel_name ?? null,
     channelUrl: item.channel_url ?? null,
+    channelLogoUrl: item.channel_logo ?? null,
     publishedAt: parseDataforseoTimestamp(item.timestamp),
     viewsCount: item.views_count ?? null,
     likesCount: item.likes_count ?? null,
@@ -94,6 +96,15 @@ export async function getVideoInfo(
  * without it; the SERP's relative label is kept for display either way. The
  * channel multiplier is filled in by the videos orchestration.
  */
+function pickChannel(item: YoutubeSerpItem, info: VideoInfoSnapshot | null) {
+  return {
+    channelId: item.channel_id ?? info?.channelId ?? null,
+    channelName: item.channel_name ?? info?.channelName ?? null,
+    channelUrl: item.channel_url ?? info?.channelUrl ?? null,
+    channelLogoUrl: item.channel_logo ?? info?.channelLogoUrl ?? null,
+  };
+}
+
 export function buildVideoRow(
   rank: number,
   item: YoutubeSerpItem,
@@ -109,9 +120,7 @@ export function buildVideoRow(
     title: info?.title ?? item.title ?? "",
     url: info?.url ?? item.url ?? `https://www.youtube.com/watch?v=${videoId}`,
     thumbnailUrl: item.thumbnail_url ?? info?.thumbnailUrl ?? null,
-    channelId: item.channel_id ?? info?.channelId ?? null,
-    channelName: item.channel_name ?? info?.channelName ?? null,
-    channelUrl: item.channel_url ?? info?.channelUrl ?? null,
+    ...pickChannel(item, info),
     publishedAt,
     publishedLabel: item.publication_date ?? null,
     viewsCount,

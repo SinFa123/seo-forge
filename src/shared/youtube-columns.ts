@@ -1,3 +1,4 @@
+import type { YoutubeChannelRow } from "./youtube-channels";
 import type { YoutubeKeywordRow, YoutubeVideoRow } from "./youtube";
 
 // SEO Forge: column definitions and cell formatters shared by the UI tables,
@@ -111,6 +112,58 @@ export const YOUTUBE_VIDEO_COLUMNS: readonly YoutubeColumn<YoutubeVideoRow>[] =
       format: (r) => (r.isShorts ? "yes" : "no"),
     },
     { key: "url", label: "URL", align: "left", format: (r) => r.url },
+  ];
+
+export const YOUTUBE_CHANNEL_COLUMNS: readonly YoutubeColumn<YoutubeChannelRow>[] =
+  [
+    {
+      key: "channelName",
+      label: "Channel",
+      align: "left",
+      format: (r) => r.channelName,
+    },
+    {
+      key: "subscribersCount",
+      label: "Subscribers",
+      align: "right",
+      format: (r) => formatInteger(r.subscribersCount),
+    },
+    {
+      key: "viewsCount",
+      label: "Views (ranking videos)",
+      align: "right",
+      format: (r) => formatInteger(r.viewsCount),
+    },
+    {
+      key: "videoCount",
+      label: "Videos",
+      align: "right",
+      format: (r) => String(r.videoCount),
+    },
+    {
+      key: "bestRank",
+      label: "Best rank",
+      align: "right",
+      format: (r) => String(r.bestRank),
+    },
+    {
+      key: "maxChannelMultiplier",
+      label: "vs channel",
+      align: "right",
+      format: (r) => formatChannelMultiplier(r.maxChannelMultiplier),
+    },
+    {
+      key: "breakout",
+      label: "Breakout",
+      align: "left",
+      format: (r) => (r.breakout ? "yes" : "no"),
+    },
+    {
+      key: "channelUrl",
+      label: "URL",
+      align: "left",
+      format: (r) => r.channelUrl ?? "—",
+    },
   ];
 
 export function formatViewsPerHour(value: number | null): string {

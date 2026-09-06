@@ -3,6 +3,7 @@ import type {
   YoutubeResearchOverview,
   YoutubeVideoRow,
 } from "@/shared/youtube";
+import type { YoutubeChannelRow } from "@/shared/youtube-channels";
 
 // SEO Forge: result shapes returned by the YouTube service and consumed
 // unchanged by the server functions and the MCP tools (one service, three
@@ -52,6 +53,8 @@ export type YoutubeResearchResult = {
 export type YoutubeVideosResult = {
   keyword: string;
   rows: YoutubeVideoRow[];
+  /** Distinct channels behind `rows`, derived, most viewed first. */
+  channels: YoutubeChannelRow[];
   dataApiStatus: YoutubeDataApiStatus;
   fetchedAt: string;
 };

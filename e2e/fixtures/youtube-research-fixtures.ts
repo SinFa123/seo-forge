@@ -1,4 +1,5 @@
 import type { YoutubeKeywordRow, YoutubeVideoRow } from "@/shared/youtube";
+import { summarizeYoutubeChannels } from "@/shared/youtube-channels";
 import type {
   ResolvedGetYoutubeVideosInput,
   ResolvedResearchYoutubeKeywordsInput,
@@ -101,6 +102,7 @@ function makeVideo(index: number, keyword: string): YoutubeVideoRow {
     channelId: `channel-${rank % 4}`,
     channelName: `Channel ${rank % 4}`,
     channelUrl: null,
+    channelLogoUrl: null,
     publishedAt: "2025-07-21T12:01:32.000Z",
     publishedLabel: `${rank} months ago`,
     viewsCount: 1_000_000 - index * 60_000,
@@ -110,7 +112,8 @@ function makeVideo(index: number, keyword: string): YoutubeVideoRow {
     isShorts: rank % 5 === 0,
     isLive: false,
     viewsPerHour: 95 - index * 4,
-    subscribersCount: 250_000 - index * 10_000,
+    // Channel 1 has few subscribers, so its million-view video breaks out.
+    subscribersCount: rank % 4 === 1 ? 20_000 : 2_500_000 - index * 10_000,
     channelMultiplier: null,
   };
 }
@@ -119,9 +122,13 @@ export function getYoutubeVideosFixture(
   data: ResolvedGetYoutubeVideosInput,
 ): YoutubeVideosResult {
   const keyword = data.keyword.trim().toLowerCase();
+  const rows = Array.from({ length: 12 }, (_, index) =>
+    makeVideo(index, keyword),
+  );
   return {
     keyword,
-    rows: Array.from({ length: 12 }, (_, index) => makeVideo(index, keyword)),
+    rows,
+    channels: summarizeYoutubeChannels(rows),
     dataApiStatus: "not_configured",
     fetchedAt: "2026-09-05T12:00:00.000Z",
   };

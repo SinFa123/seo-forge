@@ -237,6 +237,12 @@ Paths are relative to the repo root.
 - Secrets: `.env` in the repo root is a symlink to `~/.secrets/.env` (gitignored). The Cloudflare Vite plugin loads `.env` and `.env.local` as Worker vars, so `OPENROUTER_API_KEY` (SAM) and any future key reach both the Worker and the Durable Objects without copying. `.env.local` keeps `AUTH_MODE`, the DataForSEO key, and the Data API key and takes precedence.
 - Two marks: `public/seoforge-logo.svg` (hammer on the green rounded square) renders the favicons and app icons; `public/seoforge-mark.svg` (green hammer, transparent) is used next to the brand text and renders `transparent-logo.png`, matching Sinfa Audio Stream's in-app mark.
 
+### Decided on 2026-09-06 (Channels sub-tab)
+
+- The user asked for a Channels sub-tab between Videos and Saved, modelled on VidIQ's "all channels" and "breakout channels", presented like the Videos tab with subscribers and views.
+  It is derived from the videos result (no extra provider calls) and exposed to MCP as `channels` on `get_youtube_videos` with its own text table.
+- The channel filter search param is `cv`, not `view`: TanStack Router merges every route's search params into one type for `navigate`, and Backlinks already declares `view` with a different enum.
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
@@ -275,7 +281,9 @@ docs/seoforge/
 src/shared/
   brand.ts                                      NEW  BRAND_NAME and related display constants (exists)
   youtube.ts                                    NEW  row types, scoring formulas, confidence enum (exists)
-  youtube-columns.ts                            NEW  YOUTUBE_KEYWORD_COLUMNS, YOUTUBE_VIDEO_COLUMNS, cell formatters (exists)
+  youtube-columns.ts                            NEW  YOUTUBE_KEYWORD_COLUMNS, YOUTUBE_VIDEO_COLUMNS, YOUTUBE_CHANNEL_COLUMNS, cell formatters (exists)
+  youtube-channels.ts                           NEW  summarizeYoutubeChannels and the breakout rule (exists)
+  youtube-channels.test.ts                      NEW  (exists)
   youtube.test.ts                               NEW  formula and column tests (exists)
 
 src/types/
@@ -324,6 +332,7 @@ src/serverFunctions/
 src/server/mcp/tools/
   youtube-tools.ts                              NEW  research_youtube_keywords, get_youtube_videos, save_youtube_keywords, list_saved_youtube_keywords (exists)
   youtube-tools.test.ts                         NEW  (exists, 6 tests)
+  youtube-tools-columns.ts                      NEW  shared columns as MCP table columns (exists)
 src/server/mcp/server.ts                        EDIT import + register lines (done)
 
 src/routes/_project/p/$projectId/
@@ -339,6 +348,9 @@ src/client/features/youtube/
   page/YoutubeKeywordsResults.tsx               NEW  kind chips, export, bulk save bar, table, pagination; responsive (exists)
   page/YoutubeKeywordsTable.tsx                 NEW  AppDataTable columns with URL-driven sorting (exists)
   page/YoutubeVideosGrid.tsx                    NEW  video cards, multiplier badge, Data API hint (exists)
+  page/YoutubeChannelsGrid.tsx                  NEW  channel cards, All / Breakout toggle via `cv` param (exists)
+  page/YoutubeResultStates.tsx                  NEW  error card and videos/channels content switch (exists)
+  page/YoutubeFetchedLine.tsx                   NEW  fetch date + Refresh (exists)
   page/YoutubeSavedKeywords.tsx                 NEW  server-sorted, paged saved list with delete (exists)
   page/YoutubeEmptyState.tsx                    NEW  recent searches and no-results states (exists)
   page/YoutubeLoadingState.tsx                  NEW  table and video-grid skeletons (exists)
@@ -515,6 +527,12 @@ Confidence:
 
 Version 1 (superseded) scaled the anchor by a "YouTube share" derived from the seed's Trends interest relative to a benchmark keyword sent in the same request, with candidates inheriting a dampened share.
 The calibration showed the share model fits neither end of the volume range and that the Trends scaling did not improve rank agreement, so the benchmark request was dropped.
+
+### Channels and breakout
+
+The Channels sub-tab is derived from the ranking videos, so it costs nothing extra: one row per distinct channel with subscribers, views summed over its ranking videos, video count, best rank, and the highest channel multiplier.
+A channel is a "breakout" for the keyword when a ranking video has at least `BREAKOUT.channelMultiplier` (3) times the channel's median views, or, without the Data API, when a ranking video's views reach `BREAKOUT.viewsPerSubscriber` (1) times the channel's subscriber count.
+Formula in `src/shared/youtube-channels.ts`; the service attaches `channels` to every videos result (cached rows only, channels recomputed on read).
 
 ### Overall score (0 to 100)
 

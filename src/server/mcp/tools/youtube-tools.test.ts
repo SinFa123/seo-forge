@@ -143,6 +143,7 @@ describe("YouTube MCP tools", () => {
           channelId: "c1",
           channelName: "Baker",
           channelUrl: null,
+          channelLogoUrl: null,
           publishedAt: "2026-08-06T12:00:00.000Z",
           publishedLabel: "1 month ago",
           viewsCount: 100000,
@@ -154,6 +155,20 @@ describe("YouTube MCP tools", () => {
           viewsPerHour: 138.9,
           subscribersCount: 20000,
           channelMultiplier: null,
+        },
+      ],
+      channels: [
+        {
+          channelId: "c1",
+          channelName: "Baker",
+          channelUrl: null,
+          channelLogoUrl: null,
+          subscribersCount: 20000,
+          viewsCount: 100000,
+          videoCount: 1,
+          bestRank: 1,
+          maxChannelMultiplier: null,
+          breakout: true,
         },
       ],
       dataApiStatus: "not_configured",
@@ -180,6 +195,7 @@ describe("YouTube MCP tools", () => {
     expect(text).toContain(
       "1 | Bread | Baker | 1 month ago | 100,000 | 139 | — | 20,000 | 12:34 | no | https://www.youtube.com/watch?v=abc",
     );
+    expect(text).toContain("Baker | 20,000 | 100,000 | 1 | 1 | — | yes | —");
     expect(text).toContain("YOUTUBE_DATA_API_KEY is not configured");
     expect(result.structuredContent.dataApiStatus).toBe("not_configured");
   });
