@@ -162,6 +162,10 @@ Paths are relative to the repo root.
 - The user's existing GCP API key does not have the YouTube Data API enabled (probe returned 403 "API has not been used in project ... or it is disabled").
   Enabling it in the GCP console for that project, or creating a dedicated key, is a user action.
   The feature degrades gracefully without it.
+- 2026-09-06: the user enabled YouTube Data API v3 and added `YOUTUBE_DATA_API_KEY` to `~/.secrets/.env`; the line was copied into `.env.local` (the server reads `process.env` first) and the dev server restarted with the key.
+  Google still answers 403 "Requests to this API youtube method youtube.api.v3.V3DataChannelService.List are blocked", which is the response for a key whose API restrictions exclude YouTube Data API v3.
+  The Videos tab correctly reports `dataApiStatus: "error"` and the client now includes Google's message in its warning.
+  Waiting for the user to widen the key's API restrictions; then re-verify the multiplier live.
 - Wrangler `d1 execute` supports `--local`, `--remote`, `--file`, `--command`, and `--json`.
 - `drizzle-kit generate` against `src/db/youtube.schema.ts` alone emits only `youtube_saved_keywords` (with the FK to `projects`), not the imported `projects` table.
   Verified 2026-09-05 for both dialects, so the foreign key stays.
