@@ -165,7 +165,7 @@ Paths are relative to the repo root.
 - 2026-09-06: the user enabled YouTube Data API v3 and added `YOUTUBE_DATA_API_KEY` to `~/.secrets/.env`; the line was copied into `.env.local` (the server reads `process.env` first) and the dev server restarted with the key.
   Google still answers 403 "Requests to this API youtube method youtube.api.v3.V3DataChannelService.List are blocked", which is the response for a key whose API restrictions exclude YouTube Data API v3.
   The Videos tab correctly reports `dataApiStatus: "error"` and the client now includes Google's message in its warning.
-  Waiting for the user to widen the key's API restrictions; then re-verify the multiplier live.
+  After the user widened the key's API restrictions (2026-09-06) `get_youtube_videos` for "banana bread" returned `dataApiStatus: "ok"` with a multiplier on all 20 rows (0.5x to 4098x; the outliers are viral videos on small channels), so 1.6 and 2.5 are verified live and the Data API caveats on the Phase 1 and Phase 4 gates are cleared.
 - Wrangler `d1 execute` supports `--local`, `--remote`, `--file`, `--command`, and `--json`.
 - `drizzle-kit generate` against `src/db/youtube.schema.ts` alone emits only `youtube_saved_keywords` (with the FK to `projects`), not the imported `projects` table.
   Verified 2026-09-05 for both dialects, so the foreign key stays.
