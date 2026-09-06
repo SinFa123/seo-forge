@@ -5,14 +5,14 @@
  * Usage:
  *   tsx scripts/youtube-volume-calibration.ts --csv vidiq.csv [--location 2840] [--language en] [--out fit.json]
  *
- * The CSV has a header row; column names are matched case-insensitively and
- * other columns are ignored:
- *   keyword, vidiq_volume            required
- *   vidiq_competition, vidiq_overall optional (0-100); when present the script
- *                                    also buys one YouTube SERP per keyword
- *                                    (0.002 USD) and reports how our
- *                                    competition and overall scores rank
- *                                    against VidIQ's
+ * The CSV is VidIQ's keyword export (header "Keyword,Search Volume,
+ * Competition,Overall,Number of Words"); the snake_case names keyword,
+ * vidiq_volume, vidiq_competition, vidiq_overall are accepted too and other
+ * columns are ignored. Volumes like "301K" or "<750" (taken as 750) parse;
+ * VidIQ's competition labels (Very low .. Very high) map to 10..90 for rank
+ * comparison. When competition or overall is present the script also buys one
+ * YouTube SERP per keyword (0.002 USD) and reports how our competition and
+ * overall scores rank against VidIQ's.
  * Include the benchmark keyword ("how to tie a tie") so its VidIQ volume becomes
  * the benchmark constant; otherwise the current constant is kept.
  *
@@ -108,10 +108,26 @@ function splitCsvLine(line: string): string[] {
   return cells.map((cell) => cell.trim());
 }
 
-/** "301K", "2.5M", "1,200" and plain numbers. */
+const COMPETITION_LABELS: Record<string, number> = {
+  "very low": 10,
+  low: 30,
+  medium: 50,
+  high: 70,
+  "very high": 90,
+};
+
+function parseCompetition(value: string | undefined): number | null {
+  if (value == null) return null;
+  return COMPETITION_LABELS[value.trim().toLowerCase()] ?? parseNumber(value);
+}
+
+/** "301K", "2.5M", "1,200", "<750" (upper bound) and plain numbers. */
 function parseNumber(value: string | undefined): number | null {
   if (value == null || value === "") return null;
-  const match = value.replace(/,/g, "").match(/^([\d.]+)\s*([kKmM])?$/);
+  const match = value
+    .replace(/,/g, "")
+    .replace(/^</, "")
+    .match(/^([\d.]+)\s*([kKmM])?$/);
   if (!match) return null;
   const base = Number(match[1]);
   const unit = match[2]?.toLowerCase();
@@ -122,15 +138,23 @@ function parseNumber(value: string | undefined): number | null {
 
 function readSample(path: string): SampleRow[] {
   const lines = readFileSync(path, "utf8").split(/\r?\n/u).filter(Boolean);
-  const header = splitCsvLine(lines[0] ?? "").map((cell) => cell.toLowerCase());
-  const column = (name: string) => header.indexOf(name);
+  const header = splitCsvLine(lines[0] ?? "").map((cell) =>
+    cell.toLowerCase().replace(/\s+/g, "_"),
+  );
+  const column = (...names: string[]) => {
+    for (const name of names) {
+      const index = header.indexOf(name);
+      if (index !== -1) return index;
+    }
+    return -1;
+  };
   const keywordIndex = column("keyword");
-  const volumeIndex = column("vidiq_volume");
+  const volumeIndex = column("vidiq_volume", "search_volume");
   if (keywordIndex === -1 || volumeIndex === -1) {
-    fail("CSV header must contain keyword and vidiq_volume");
+    fail("CSV header must contain Keyword and Search Volume (or vidiq_volume)");
   }
-  const competitionIndex = column("vidiq_competition");
-  const overallIndex = column("vidiq_overall");
+  const competitionIndex = column("vidiq_competition", "competition");
+  const overallIndex = column("vidiq_overall", "overall");
   const rows: SampleRow[] = [];
   for (const line of lines.slice(1)) {
     const cells = splitCsvLine(line);
@@ -141,7 +165,9 @@ function readSample(path: string): SampleRow[] {
       keyword,
       vidiqVolume,
       vidiqCompetition:
-        competitionIndex === -1 ? null : parseNumber(cells[competitionIndex]),
+        competitionIndex === -1
+          ? null
+          : parseCompetition(cells[competitionIndex]),
       vidiqOverall:
         overallIndex === -1 ? null : parseNumber(cells[overallIndex]),
     });

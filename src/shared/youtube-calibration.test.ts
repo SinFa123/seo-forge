@@ -56,6 +56,26 @@ describe("fitYoutubeScoring", () => {
   });
 });
 
+describe("fitYoutubeScoring without the benchmark in the sample", () => {
+  it("derives the benchmark volume from the median implied by Trends ratios", () => {
+    const fit = fitYoutubeScoring(
+      [
+        // 10k * 50 / 10 = 50k, 30k * 50 / 25 = 60k, 100k * 50 / 10 = 500k
+        sample("a", 10_000, 50_000, 10),
+        sample("b", 30_000, 50_000, 25),
+        sample("c", 100_000, 50_000, 10),
+        sample("no trends", 5_000, 50_000, null),
+      ],
+      BENCH,
+    );
+
+    expect(fit.benchmark).toEqual({
+      keyword: BENCH,
+      youtubeMonthlyVolume: 60_000,
+    });
+  });
+});
+
 describe("fitYoutubeScoring score correlations", () => {
   it("correlates our competition and overall scores with VidIQ's when both sides exist", () => {
     const fit = fitYoutubeScoring(

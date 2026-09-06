@@ -135,9 +135,23 @@ export function fitYoutubeScoring(
   const benchmarkSample = samples.find(
     (sample) => normalizeYoutubeKeyword(sample.keyword) === benchmark,
   );
-  const benchmarkVolume =
+  // Without the benchmark in the sample, every keyword with a Trends signal
+  // implies a benchmark volume: vidiq * benchmarkInterest / interest. The
+  // median of those is robust to a few outliers.
+  const impliedBenchmarkVolumes = samples.flatMap((sample) =>
+    sample.interest != null &&
+    sample.benchmarkInterest != null &&
+    sample.interest >= YOUTUBE_SCORING.MIN_TRENDS_INTEREST &&
+    sample.benchmarkInterest >= YOUTUBE_SCORING.MIN_TRENDS_INTEREST &&
+    sample.vidiqVolume > 0
+      ? [(sample.vidiqVolume * sample.benchmarkInterest) / sample.interest]
+      : [],
+  );
+  const benchmarkVolume = Math.round(
     benchmarkSample?.vidiqVolume ??
-    YOUTUBE_SCORING.BENCHMARK.youtubeMonthlyVolume;
+      median(impliedBenchmarkVolumes) ??
+      YOUTUBE_SCORING.BENCHMARK.youtubeMonthlyVolume,
+  );
 
   const impliedShares = samples.flatMap((sample) =>
     sample.anchorVolume != null &&
