@@ -16,13 +16,21 @@
  * Include the benchmark keyword ("how to tie a tie") so its VidIQ volume becomes
  * the benchmark constant; otherwise the current constant is kept.
  *
+ * Every provider response is cached under --cache-dir (default
+ * ~/.cache/seo-forge/youtube-calibration/) as soon as it arrives, so a rerun
+ * after a failure re-buys nothing, and a keyword whose SERP fails is recorded
+ * as unscored instead of aborting the batch.
+ *
  * Reads DATAFORSEO_API_KEY from the environment or .env.local. Cost: one Google
  * Ads search-volume request per 700 keywords (about 0.09 USD each) plus one
  * Google Trends request per 4 keywords (0.011 USD each), plus the optional
  * SERPs; the script prints the total the provider reported.
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import process from "node:process";
 import {
   YOUTUBE_SCORING,
@@ -54,6 +62,10 @@ const locationCode = Number(args.location ?? 2840);
 const languageCode = args.language ?? "en";
 const apiKey =
   process.env.DATAFORSEO_API_KEY ?? fail("DATAFORSEO_API_KEY is not set");
+const cacheDir =
+  args["cache-dir"] ??
+  join(homedir(), ".cache", "seo-forge", "youtube-calibration");
+mkdirSync(cacheDir, { recursive: true });
 
 type DataforseoTask = {
   status_code?: number;
@@ -63,12 +75,22 @@ type DataforseoTask = {
 };
 
 let totalCost = 0;
+let cachedCalls = 0;
 
+/** Successful responses are cached by request so a rerun re-buys nothing. */
 async function post(
   path: string,
   body: unknown,
   options: { allowNoResults?: boolean } = {},
 ): Promise<DataforseoTask> {
+  const cacheKey = createHash("sha256")
+    .update(JSON.stringify({ path, body }))
+    .digest("hex");
+  const cachePath = join(cacheDir, `${cacheKey}.json`);
+  if (existsSync(cachePath)) {
+    cachedCalls += 1;
+    return JSON.parse(readFileSync(cachePath, "utf8")) as DataforseoTask;
+  }
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: {
@@ -82,6 +104,9 @@ async function post(
   if (!task)
     fail(`DataForSEO returned no task for ${path} (HTTP ${response.status})`);
   totalCost += task.cost ?? 0;
+  if (task.status_code === 20000 || options.allowNoResults) {
+    writeFileSync(cachePath, JSON.stringify(task));
+  }
   // A keyword with no YouTube results comes back as task 40102; for the
   // competition SERPs that just means "unscored", not a failure.
   if (
@@ -91,7 +116,7 @@ async function post(
     return { ...task, result: [] };
   }
   if (task.status_code !== 20000) {
-    fail(
+    throw new Error(
       `DataForSEO ${path} failed: ${task.status_code} ${task.status_message}`,
     );
   }
@@ -194,18 +219,27 @@ async function fetchCompetition(
   const now = new Date();
   const result = new Map<string, number | null>();
   for (const keyword of keywords) {
-    const task = await post(
-      "/v3/serp/youtube/organic/live/advanced",
-      {
-        keyword,
-        location_code: locationCode,
-        language_code: languageCode,
-        device: "desktop",
-        os: "windows",
-        block_depth: 20,
-      },
-      { allowNoResults: true },
-    );
+    let task: DataforseoTask;
+    try {
+      task = await post(
+        "/v3/serp/youtube/organic/live/advanced",
+        {
+          keyword,
+          location_code: locationCode,
+          language_code: languageCode,
+          device: "desktop",
+          os: "windows",
+          block_depth: 20,
+        },
+        { allowNoResults: true },
+      );
+    } catch (error) {
+      console.warn(
+        `SERP for "${keyword}" failed, leaving it unscored: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      result.set(keyword, null);
+      continue;
+    }
     const items = ((task.result?.[0] as { items?: unknown[] } | undefined)
       ?.items ?? []) as Array<{
       video_id?: string | null;
@@ -280,13 +314,21 @@ async function fetchInterest(
   const others = keywords.filter((k) => k !== benchmark);
   for (let i = 0; i < others.length; i += TRENDS_BATCH) {
     const batch = [...others.slice(i, i + TRENDS_BATCH), benchmark];
-    const task = await post("/v3/keywords_data/google_trends/explore/live", {
-      keywords: batch,
-      location_code: locationCode,
-      language_code: languageCode,
-      type: "youtube",
-      time_range: "past_12_months",
-    });
+    let task: DataforseoTask;
+    try {
+      task = await post("/v3/keywords_data/google_trends/explore/live", {
+        keywords: batch,
+        location_code: locationCode,
+        language_code: languageCode,
+        type: "youtube",
+        time_range: "past_12_months",
+      });
+    } catch (error) {
+      console.warn(
+        `Trends for [${batch.join(", ")}] failed, leaving them without interest: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      continue;
+    }
     const items =
       (task.result?.[0] as { items?: unknown[] } | undefined)?.items ?? [];
     const graph = items.find(
@@ -358,7 +400,9 @@ async function main() {
   );
   console.log("\nFit statistics:");
   console.log(JSON.stringify(fit.stats, null, 2));
-  console.log(`\nDataForSEO cost reported: ${totalCost.toFixed(3)} USD`);
+  console.log(
+    `\nDataForSEO cost reported: ${totalCost.toFixed(3)} USD (${cachedCalls} responses served from ${cacheDir})`,
+  );
   if (args.out) {
     writeFileSync(args.out, JSON.stringify(fit, null, 2));
     console.log(`Full fit written to ${args.out}`);
