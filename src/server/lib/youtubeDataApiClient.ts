@@ -35,6 +35,10 @@ type YoutubeDataApiResult<T> =
   | { status: "not_configured" }
   | { status: "error"; message: string };
 
+const googleErrorSchema = z.object({
+  error: z.object({ message: z.string() }),
+});
+
 const channelsResponseSchema = z.object({
   items: z
     .array(
@@ -89,9 +93,15 @@ async function apiGet<T extends z.ZodTypeAny>(
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) {
-    // Never include the URL (it carries the key) in surfaced messages.
+    // Never include the URL (it carries the key) in surfaced messages; Google's
+    // own reason ("API key not valid", "blocked", quota) is what an operator
+    // needs to fix the key.
+    const reason = googleErrorSchema.safeParse(
+      await response.json().catch(() => null),
+    );
+    const detail = reason.success ? `: ${reason.data.error.message}` : "";
     throw new Error(
-      `YouTube Data API ${resource} failed: HTTP ${response.status}`,
+      `YouTube Data API ${resource} failed: HTTP ${response.status}${detail}`,
     );
   }
   const parsed = schema.safeParse(await response.json());
