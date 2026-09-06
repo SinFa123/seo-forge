@@ -77,8 +77,8 @@ describe("YouTube MCP tools", () => {
           throw new Error("DataForSEO rejected the seed");
         return {
           seed: seedRow,
-          rows: [candidateRow],
-          diagnostics: { candidateCount: 1 },
+          rows: [candidateRow, { ...candidateRow, keyword: "bread recipe" }],
+          diagnostics: { candidateCount: 2, serpRowCount: 5 },
           fetchedAt: "2026-09-05T12:00:00.000Z",
         };
       },
@@ -89,6 +89,7 @@ describe("YouTube MCP tools", () => {
         projectId: "project_1",
         seeds: [{ seed: "bake bread" }, { seed: "broken" }],
         serpRowLimit: 5,
+        rowLimit: 1,
       },
       toolContext,
     );
@@ -104,9 +105,19 @@ describe("YouTube MCP tools", () => {
       expect.objectContaining({ organizationId: "org_123" }),
     );
     expect(result.structuredContent.results).toEqual([
-      expect.objectContaining({ seed: "bake bread", ok: true, rowCount: 1 }),
+      expect.objectContaining({
+        seed: "bake bread",
+        ok: true,
+        rowCount: 1,
+        totalRowCount: 2,
+        notes: [
+          expect.stringContaining("estimate"),
+          expect.stringContaining("top 5 rows"),
+        ],
+      }),
       { seed: "broken", ok: false, error: "DataForSEO rejected the seed" },
     ]);
+    expect(textContent(result)).toContain('"bake bread" — 1 of 2 keywords');
     const text = textContent(result);
     expect(text).toContain(
       "Keyword | Search volume (est.) | Confidence | Competition | Overall | Words | Type",

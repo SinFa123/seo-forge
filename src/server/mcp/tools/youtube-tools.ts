@@ -75,6 +75,15 @@ const researchInputSchema = {
     .describe(
       `How many candidate keywords (ranked by Google volume) get their own YouTube SERP for a competition score. Defaults to ${YOUTUBE_SERP_ROW_LIMIT_DEFAULT}; 0 scores only the seed. Each row SERP costs about 0.002 USD; rows beyond the limit have competition null.`,
     ),
+  rowLimit: z
+    .number()
+    .int()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe(
+      "Maximum keyword rows returned per seed, taken from the top of the volume-ranked list. Defaults to all (up to 200). Does not change what is researched or charged; use it to keep the response small.",
+    ),
 } as const;
 
 type ResearchArgs = z.infer<z.ZodObject<typeof researchInputSchema>>;
@@ -93,10 +102,12 @@ export const researchYoutubeKeywordsTool = {
               seed: z.string(),
               ok: z.literal(true),
               rowCount: z.number(),
+              totalRowCount: z.number(),
               overview: looseObjectOutputSchema,
               rows: z.array(looseObjectOutputSchema),
               diagnostics: looseObjectOutputSchema,
               fetchedAt: z.string(),
+              notes: z.array(z.string()),
             })
             .passthrough(),
           z
@@ -135,14 +146,25 @@ export const researchYoutubeKeywordsTool = {
             },
             context.billing,
           );
+          const rows = args.rowLimit
+            ? data.rows.slice(0, args.rowLimit)
+            : data.rows;
+          const scored = data.diagnostics.serpRowCount;
           return {
             seed: item.seed,
             ok: true as const,
-            rowCount: data.rows.length,
+            rowCount: rows.length,
+            totalRowCount: data.rows.length,
             overview: data.seed,
-            rows: data.rows,
+            rows,
             diagnostics: data.diagnostics,
             fetchedAt: data.fetchedAt,
+            // Payload-level caveats so a consumer that only inspects
+            // structuredContent still sees them.
+            notes: [
+              "searchVolume is an estimated monthly YouTube search count (Google Ads volume scaled by YouTube Trends interest); report it as an estimate with volumeConfidence.",
+              `competition was scored from a YouTube SERP for the seed and the top ${scored} rows by Google volume; competition null on other rows means unscored, not easy.`,
+            ],
           };
         } catch (error) {
           return {
@@ -165,7 +187,7 @@ export const researchYoutubeKeywordsTool = {
             r.overview.medianViewsPerHour == null
               ? "—"
               : r.overview.medianViewsPerHour.toFixed(1);
-          const header = `## "${r.seed}" — ${r.rowCount} keywords\nSeed overview (median avg views/hr of top ${r.overview.videoCount} videos: ${vph}):\n${overview}`;
+          const header = `## "${r.seed}" — ${r.rowCount}${r.totalRowCount > r.rowCount ? ` of ${r.totalRowCount}` : ""} keywords\nSeed overview (median avg views/hr of top ${r.overview.videoCount} videos: ${vph}):\n${overview}`;
           if (r.rowCount === 0) return `${header}\n(no candidate keywords)`;
           return `${header}\n\nKeywords:\n${formatMcpTable(r.rows, KEYWORD_COLUMNS)}`;
         })
