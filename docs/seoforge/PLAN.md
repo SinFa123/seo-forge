@@ -836,6 +836,10 @@ Then:
 1. Resolve conflicts.
    Expected conflict sites are exactly the files in section 8.
    Take upstream's side for everything outside our registration lines.
+   Known resolutions:
+   - `src/server/features/sam/samSkills.test.ts`: upstream edits the expected skill-name array when it adds or renames a skill. Keep upstream's array and re-add `"youtube-research"` in alphabetical position (currently last). The test must list every non-internal `.agents/skills/*` directory.
+   - `scripts/sync-plugin-skills.mjs`: same shape, keep upstream's list plus `"youtube-research"`, then run `pnpm sync-plugin-skills`.
+   - `src/server/mcp/server.ts`, `src/client/navigation/items.ts`, `src/server/lib/dataforseo/client.ts`: keep upstream's block and re-add our import plus register or entry lines.
 2. Re-run `pnpm install --frozen-lockfile` if `pnpm-lock.yaml` changed (needs user approval per the install rule).
 3. Run `pnpm types:check`.
    Compilation errors inside `youtube` folders mean an upstream helper we import changed; fix our call sites.
@@ -859,6 +863,7 @@ Target: fewer than fifteen files, each under ten changed lines.
 | `src/client/navigation/items.ts`                   | nav entry                                                  |        | 4.2      | planned |
 | `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                         |        | 4.4      | planned |
 | `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                       |        | 5.2      | planned |
+| `src/server/features/sam/samSkills.test.ts`        | "youtube-research" in the expected public skill list       | +2     | 5.3      | done    |
 | `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                       | +3     | 1.6      | done    |
 | `.env.example`                                     | document the key                                           | +6     | 1.6      | done    |
 | `knip.jsonc`                                       | drizzle youtube configs as entries                         | +3     | 1.8      | done    |
@@ -934,7 +939,7 @@ Phase 5
 
 - [x] 5.1 Skill (`.agents/skills/youtube-research/SKILL.md`: goal, inputs, project context and research log, the four tools with costs, workflow, output table in the tab's column order, guardrails on estimates, spend, and saving)
 - [x] 5.2 Plugin sync (`sync-plugin-skills.mjs` +1 line; `pnpm sync-plugin-skills` copies 10 skills; `pnpm ci:check` passes with a clean plugin diff)
-- [x] 5.3 SAM registration: none needed; `src/server/features/sam/samSkills.ts` globs every `.agents/skills/*/SKILL.md` without `metadata.internal`, so the skill is bundled automatically (recorded in section 1). OPEN: `src/server/features/sam/samSkills.test.ts` hardcodes the nine public skill names, so `pnpm test` now fails one assertion ("serves exactly the public product skills"). Fixing it is a one-line edit to an upstream test outside the register (option A, recommended, then add it to section 8) or marking the skill `metadata.internal: true` so SAM does not bundle it (option B, no upstream edit, but SAM users lose the skill). Waiting for the user's decision; every other check is green.
+- [x] 5.3 SAM registration: none needed; `src/server/features/sam/samSkills.ts` globs every `.agents/skills/*/SKILL.md` without `metadata.internal`, so the skill is bundled automatically (recorded in section 1). `src/server/features/sam/samSkills.test.ts` hardcodes the public skill names; the user chose to add `"youtube-research"` there (2026-09-06, registered in section 8 with its merge resolution in section 7) so SAM's in-app chat can use the skill.
 - [x] Phase 5 exit gate passed (2026-09-05): a headless agent (`claude -p --model sonnet`) given only the SKILL.md as system prompt and the local MCP completed a sourdough-bread task using `research_youtube_keywords` and `get_youtube_videos` on cached results (no DataForSEO spend), saved nothing, and produced both tables in the skill's column order. Its feedback was folded into the skill: `serpRowLimit` scores head terms first, how to treat `competition: null`, the channel multiplier needs the Data API key, what counts as a matching research-log entry, and `unknown` in table cells. `pnpm sync-plugin-skills` leaves a clean diff after commit and `pnpm ci:check` passes.
 
 Phase 6
