@@ -71,12 +71,10 @@ export function getYoutubeResearchFixture(
       anchoredCount: rows.length - 1,
       serpRowCount: scoredRows,
       seedInterest: 10.9,
-      benchmarkInterest: 41.5,
-      seedYoutubeShare: 0.39,
       apiCalls: {
         youtubeSerp: 1 + scoredRows,
         videoInfo: 20,
-        trends: 2,
+        trends: 1,
         adsSearchVolume: 1,
         suggest: 36,
       },

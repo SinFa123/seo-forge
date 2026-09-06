@@ -76,7 +76,7 @@ The brand string is defined once in `src/shared/brand.ts` and imported where it 
   Upstream does not merge external pull requests.
 - Rebranding anything beyond the presentation layer.
 - Per-candidate Google Trends lookups.
-  At 0.011 USD per request they would dominate the cost of a research run, so Trends informs the seed only and candidates inherit a dampened share.
+  At 0.011 USD per request they would dominate the cost of a research run, so Trends is requested once for the seed (confidence signal and related queries) and volumes come from a calibrated mapping of Google Ads volume.
 
 ## End state
 

@@ -1,6 +1,6 @@
 /**
- * SEO Forge: fits the YouTube volume estimator (YOUTUBE_SCORING in
- * src/shared/youtube.ts) to a VidIQ sample. Phase 6 of docs/seoforge/PLAN.md.
+ * SEO Forge: fits the YouTube volume power law (YOUTUBE_SCORING.VOLUME_POWER_LAW
+ * in src/shared/youtube.ts) to a VidIQ sample. Phase 6 of docs/seoforge/PLAN.md.
  *
  * Usage:
  *   tsx scripts/youtube-volume-calibration.ts --csv vidiq.csv [--location 2840] [--language en] [--out fit.json]
@@ -13,8 +13,6 @@
  * comparison. When competition or overall is present the script also buys one
  * YouTube SERP per keyword (0.002 USD) and reports how our competition and
  * overall scores rank against VidIQ's.
- * Include the benchmark keyword ("how to tie a tie") so its VidIQ volume becomes
- * the benchmark constant; otherwise the current constant is kept.
  *
  * Every provider response is cached under --cache-dir (default
  * ~/.cache/seo-forge/youtube-calibration/) as soon as it arrives, so a rerun
@@ -22,9 +20,8 @@
  * as unscored instead of aborting the batch.
  *
  * Reads DATAFORSEO_API_KEY from the environment or .env.local. Cost: one Google
- * Ads search-volume request per 700 keywords (about 0.09 USD each) plus one
- * Google Trends request per 4 keywords (0.011 USD each), plus the optional
- * SERPs; the script prints the total the provider reported.
+ * Ads search-volume request per 700 keywords (about 0.09 USD each) plus the
+ * optional SERPs; the script prints the total the provider reported.
  */
 
 import { createHash } from "node:crypto";
@@ -33,7 +30,6 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import {
-  YOUTUBE_SCORING,
   computeCompetition,
   normalizeYoutubeKeyword,
   parseRelativePublicationDate,
@@ -46,8 +42,6 @@ import { loadLocalEnv, parseArgs } from "./cli-utils";
 
 const API_BASE = "https://api.dataforseo.com";
 const ADS_CHUNK = 700;
-const TRENDS_BATCH = 4;
-const TRENDS_WEEKS = 12;
 
 const args = parseArgs(process.argv.slice(2));
 loadLocalEnv();
@@ -129,6 +123,7 @@ async function post(
 type SampleRow = {
   keyword: string;
   vidiqVolume: number;
+  vidiqIsUpperBound: boolean;
   vidiqCompetition: number | null;
   vidiqOverall: number | null;
 };
@@ -204,6 +199,7 @@ function readSample(path: string): SampleRow[] {
     rows.push({
       keyword,
       vidiqVolume,
+      vidiqIsUpperBound: (cells[volumeIndex] ?? "").trim().startsWith("<"),
       vidiqCompetition:
         competitionIndex === -1
           ? null
@@ -296,80 +292,15 @@ async function fetchAnchors(
   return anchors;
 }
 
-function meanTrailing(values: Array<number | null>): number | null {
-  const trailing = values
-    .slice(-TRENDS_WEEKS)
-    .filter((v): v is number => v != null);
-  if (trailing.length === 0) return null;
-  return trailing.reduce((sum, v) => sum + v, 0) / trailing.length;
-}
-
-async function fetchInterest(
-  keywords: string[],
-  benchmark: string,
-): Promise<
-  Map<string, { interest: number | null; benchmarkInterest: number | null }>
-> {
-  const result = new Map<
-    string,
-    { interest: number | null; benchmarkInterest: number | null }
-  >();
-  const others = keywords.filter((k) => k !== benchmark);
-  for (let i = 0; i < others.length; i += TRENDS_BATCH) {
-    const batch = [...others.slice(i, i + TRENDS_BATCH), benchmark];
-    let task: DataforseoTask;
-    try {
-      task = await post("/v3/keywords_data/google_trends/explore/live", {
-        keywords: batch,
-        location_code: locationCode,
-        language_code: languageCode,
-        type: "youtube",
-        time_range: "past_12_months",
-      });
-    } catch (error) {
-      console.warn(
-        `Trends for [${batch.join(", ")}] failed, leaving them without interest: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      continue;
-    }
-    const items =
-      (task.result?.[0] as { items?: unknown[] } | undefined)?.items ?? [];
-    const graph = items.find(
-      (item) => (item as { type?: string }).type === "google_trends_graph",
-    ) as
-      | { keywords?: string[]; data?: Array<{ values: Array<number | null> }> }
-      | undefined;
-    const graphKeywords = (graph?.keywords ?? batch).map(
-      normalizeYoutubeKeyword,
-    );
-    const points = graph?.data ?? [];
-    const interestOf = (keyword: string) => {
-      const index = graphKeywords.indexOf(keyword);
-      return index === -1
-        ? null
-        : meanTrailing(points.map((p) => p.values[index] ?? null));
-    };
-    const benchmarkInterest = interestOf(benchmark);
-    for (const keyword of batch) {
-      result.set(keyword, { interest: interestOf(keyword), benchmarkInterest });
-    }
-  }
-  return result;
-}
-
 async function main() {
-  const benchmark = normalizeYoutubeKeyword(YOUTUBE_SCORING.BENCHMARK.keyword);
   const sample = readSample(csvPath);
   if (sample.length === 0) fail(`No rows read from ${csvPath}`);
-  const keywords = [
-    ...new Set([...sample.map((row) => row.keyword), benchmark]),
-  ];
+  const keywords = [...new Set(sample.map((row) => row.keyword))];
   console.log(
     `Calibrating ${sample.length} keywords (${locationCode}/${languageCode})...`,
   );
 
   const anchors = await fetchAnchors(keywords);
-  const interest = await fetchInterest(keywords, benchmark);
   const wantsScores = sample.some(
     (row) => row.vidiqCompetition != null || row.vidiqOverall != null,
   );
@@ -380,27 +311,16 @@ async function main() {
   const samples: CalibrationSample[] = sample.map((row) => ({
     keyword: row.keyword,
     vidiqVolume: row.vidiqVolume,
+    vidiqIsUpperBound: row.vidiqIsUpperBound,
     anchorVolume: anchors.get(row.keyword) ?? null,
-    interest: interest.get(row.keyword)?.interest ?? null,
-    benchmarkInterest: interest.get(row.keyword)?.benchmarkInterest ?? null,
     competition: competition.get(row.keyword) ?? null,
     vidiqCompetition: row.vidiqCompetition,
     vidiqOverall: row.vidiqOverall,
   }));
-  const fit = fitYoutubeScoring(samples, benchmark);
+  const fit = fitYoutubeScoring(samples);
 
-  console.log("\nProposed YOUTUBE_SCORING constants:");
-  console.log(
-    JSON.stringify(
-      {
-        BENCHMARK: fit.benchmark,
-        DEFAULT_YOUTUBE_SHARE: fit.defaultYoutubeShare,
-        YOUTUBE_SHARE_BOUNDS: fit.youtubeShareBounds,
-      },
-      null,
-      2,
-    ),
-  );
+  console.log("\nProposed YOUTUBE_SCORING.VOLUME_POWER_LAW:");
+  console.log(JSON.stringify(fit.powerLaw, null, 2));
   console.log("\nFit statistics:");
   console.log(JSON.stringify(fit.stats, null, 2));
   console.log(

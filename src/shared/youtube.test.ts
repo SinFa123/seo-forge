@@ -11,10 +11,10 @@ import {
   computeChannelMultiplier,
   computeCompetition,
   computeOverallScore,
-  computeSeedYoutubeShare,
   computeViewsPerHour,
   countWords,
   estimateSearchVolume,
+  hasTrendsSignal,
   median,
   normalizeYoutubeKeyword,
   parseRelativePublicationDate,
@@ -163,76 +163,41 @@ describe("competition", () => {
 });
 
 describe("search volume estimate", () => {
-  it("derives the seed share from Trends relative to the benchmark, clamped", () => {
-    const { benchmark, bounds } = {
-      benchmark: YOUTUBE_SCORING.BENCHMARK.youtubeMonthlyVolume,
-      bounds: YOUTUBE_SCORING.YOUTUBE_SHARE_BOUNDS,
-    };
-    // seed interest half the benchmark => half the benchmark's YouTube volume.
-    expect(
-      computeSeedYoutubeShare({
-        seedInterest: 50,
-        benchmarkInterest: 100,
-        anchorVolume: benchmark,
-      }),
-    ).toBeCloseTo(0.5);
-    expect(
-      computeSeedYoutubeShare({
-        seedInterest: 100,
-        benchmarkInterest: 1,
-        anchorVolume: 10,
-      }),
-    ).toBe(bounds.max);
-    expect(
-      computeSeedYoutubeShare({
-        seedInterest: 0,
-        benchmarkInterest: 100,
-        anchorVolume: 1000,
-      }),
-    ).toBeNull();
-    expect(
-      computeSeedYoutubeShare({
-        seedInterest: 50,
-        benchmarkInterest: 100,
-        anchorVolume: null,
-      }),
-    ).toBeNull();
+  it("maps the Google anchor through the calibrated power law and grows sublinearly", () => {
+    const { coefficient, exponent } = YOUTUBE_SCORING.VOLUME_POWER_LAW;
+    const small = estimateSearchVolume({
+      anchorVolume: 1000,
+      trendsSignal: true,
+    });
+    const large = estimateSearchVolume({
+      anchorVolume: 100_000,
+      trendsSignal: true,
+    });
+    expect(small.searchVolume).toBe(Math.round(coefficient * 1000 ** exponent));
+    expect(large.searchVolume).toBe(
+      Math.round(coefficient * 100_000 ** exponent),
+    );
+    // 100x the Google volume is well under 100x the estimate.
+    expect((large.searchVolume ?? 0) / (small.searchVolume ?? 1)).toBeLessThan(
+      10,
+    );
   });
 
   it("assigns confidence by which inputs exist", () => {
     expect(
-      estimateSearchVolume({ anchorVolume: null, seedShare: 1, isSeed: true }),
+      estimateSearchVolume({ anchorVolume: null, trendsSignal: true }),
     ).toEqual({ searchVolume: null, volumeConfidence: "low" });
     expect(
-      estimateSearchVolume({
-        anchorVolume: 1000,
-        seedShare: null,
-        isSeed: true,
-      }),
-    ).toEqual({
-      searchVolume: Math.round(1000 * YOUTUBE_SCORING.DEFAULT_YOUTUBE_SHARE),
-      volumeConfidence: "medium",
-    });
+      estimateSearchVolume({ anchorVolume: 1000, trendsSignal: false })
+        .volumeConfidence,
+    ).toBe("medium");
     expect(
-      estimateSearchVolume({
-        anchorVolume: 1000,
-        seedShare: 0.9,
-        isSeed: true,
-      }),
-    ).toEqual({ searchVolume: 900, volumeConfidence: "high" });
-  });
-
-  it("dampens a candidate's share halfway between the default and the seed's", () => {
-    const base = YOUTUBE_SCORING.DEFAULT_YOUTUBE_SHARE;
-    const result = estimateSearchVolume({
-      anchorVolume: 1000,
-      seedShare: 0.9,
-      isSeed: false,
-    });
-    expect(result.volumeConfidence).toBe("medium");
-    expect(result.searchVolume).toBe(
-      Math.round(1000 * (base + (0.9 - base) * 0.5)),
-    );
+      estimateSearchVolume({ anchorVolume: 1000, trendsSignal: true })
+        .volumeConfidence,
+    ).toBe("high");
+    expect(hasTrendsSignal(0)).toBe(false);
+    expect(hasTrendsSignal(null)).toBe(false);
+    expect(hasTrendsSignal(YOUTUBE_SCORING.MIN_TRENDS_INTEREST)).toBe(true);
   });
 });
 

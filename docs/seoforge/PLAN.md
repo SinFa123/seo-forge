@@ -416,15 +416,14 @@ Bump the estimator version constant whenever a formula changes so stale cached s
 
 ### External calls per keyword research
 
-| Step                 | Call                                       | Count        | Notes                                                                                          |
-| -------------------- | ------------------------------------------ | ------------ | ---------------------------------------------------------------------------------------------- |
-| Seed SERP            | YouTube organic                            | 1            | block_depth 20                                                                                 |
-| Seed video info      | YouTube video info                         | up to 20     | exact publish time for views per hour and subscriber counts for competition; only for the seed |
-| Candidate generation | YouTube suggest                            | ~40          | seed, seed + a to z, question prefixes; free                                                   |
-| Candidate generation | Google Trends youtube, seed only           | 1            | related queries top and rising; 0.011 USD                                                      |
-| Volume anchor        | Google Ads search volume                   | 1            | bulk, all candidates in one call                                                               |
-| Trends share         | Google Trends youtube, seed plus benchmark | 1            | graph only; 0.011 USD; the seed's share factor is applied to its candidates with dampening     |
-| Row competition      | YouTube organic                            | serpRowLimit | default 50, user adjustable; SERP-only competition for rows                                    |
+| Step                 | Call                             | Count        | Notes                                                                                                                |
+| -------------------- | -------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Seed SERP            | YouTube organic                  | 1            | block_depth 20                                                                                                       |
+| Seed video info      | YouTube video info               | up to 20     | exact publish time for views per hour and subscriber counts for competition; only for the seed                       |
+| Candidate generation | YouTube suggest                  | ~40          | seed, seed + a to z, question prefixes; free                                                                         |
+| Candidate generation | Google Trends youtube, seed only | 1            | one request: related queries top and rising as candidates, interest graph as the seed's confidence signal; 0.011 USD |
+| Volume anchor        | Google Ads search volume         | 1            | bulk, all candidates in one call; 0.09 USD                                                                           |
+| Row competition      | YouTube organic                  | serpRowLimit | default 50, user adjustable; SERP-only competition for rows                                                          |
 
 Videos tab adds up to 20 Data API channel lookups, each cached 7 days.
 
@@ -468,21 +467,22 @@ Version 1 weights: views 0.40, subscribers 0.25 (redistributed to views when abs
 
 ### Search volume estimate
 
+Version 2 (calibrated 2026-09-06, see Phase 6 in section 9):
+
 1. `anchor` is Google Ads monthly volume for the keyword.
-2. `youtubeShare` is the keyword's Trends youtube interest divided by the benchmark keyword's interest in the same batch, times the benchmark's known estimate, divided by the anchor.
-   Clamped to a fixed range.
-   Falls back to a default share when Trends returns 0.
-3. `intentBoost` is 1.0 by default, raised when the Google SERP for the keyword contains video results.
-   Version 1 skips this and records it as a planned input.
-4. `estimate = round(anchor * youtubeShare * intentBoost)`.
+2. `estimate = round(coefficient * anchor ^ exponent)` with `VOLUME_POWER_LAW = { coefficient: 4815, exponent: 0.303 }`, fitted by least squares on log-log VidIQ versus Google volume.
+   VidIQ's volume grows far slower than Google's (about 100x Google at 1K Google searches, 1.2x above 100K), so a constant share cannot fit both ends; the power law gets 76% of the sample within one order of magnitude.
+3. Google Trends (type youtube) is requested once for the seed alone.
+   Its interest graph only decides the seed's confidence; its related queries feed candidate generation.
 
 Confidence:
 
-- `high` for the seed when both its anchor and its Trends interest exist.
-- `medium` for candidates that have an anchor (their share factor is inherited from the seed, dampened toward the default share), and for the seed when only its anchor exists.
+- `high` for the seed when it has an anchor and its Trends series shows interest at or above `MIN_TRENDS_INTEREST`.
+- `medium` for every candidate with an anchor (Trends is never bought per candidate) and for a seed without Trends signal.
 - `low` when there is no anchor; volume is null and the UI shows "< 10".
 
-The benchmark keyword and its known estimate are constants set in Phase 6.
+Version 1 (superseded) scaled the anchor by a "YouTube share" derived from the seed's Trends interest relative to a benchmark keyword sent in the same request, with candidates inheriting a dampened share.
+The calibration showed the share model fits neither end of the volume range and that the Trends scaling did not improve rank agreement, so the benchmark request was dropped.
 
 ### Overall score (0 to 100)
 
@@ -932,8 +932,8 @@ Phase 6
 
 - [x] 6.1 Calibration sample supplied: `docs/seoforge/calibration/vidiq-keywords-2026-09-06.csv`, VidIQ app export, 182 keywords (75 under 10K, 56 between 10K and 100K, 51 above 100K; 23 volumes are VidIQ upper bounds like "<750"; competition is a label from Very low to Very high; the benchmark keyword is absent)
 - [x] 6.2 Calibration script (`scripts/youtube-volume-calibration.ts` over the pure `fitYoutubeScoring` in `src/shared/youtube-calibration.ts`, 3 tests). When the export carries VidIQ competition and overall scores it also buys one YouTube SERP per keyword (0.002 USD) and reports Spearman rank correlations of our competition and overall against VidIQ's. Not yet run live: needs the CSV (about 0.09 USD per 700 keywords plus 0.011 USD per 4 keywords plus 0.002 USD per keyword for scores).
-- [ ] 6.3 Constants updated and results recorded. Run on 2026-09-06 (0.96 USD, full fit in `docs/seoforge/calibration/fit-2026-09-06.json`): 154 of 182 keywords have a Google Ads anchor (the 28 without are adult, music, or brand terms), 140 have a Trends signal. Findings: VidIQ volume is about 34x Google volume at the median but the ratio falls steeply with size (median 100x below 1K Google searches, 1.2x above 100K), so the linear "share" model in section 5 cannot reproduce VidIQ's scale at both ends; Trends scaling does not improve rank agreement (Spearman 0.464 with it, 0.459 without); our competition and overall rank weakly against VidIQ's (0.14 and 0.09). On the 138 anchored, unbounded rows a power law `estimate = 4815 * anchor^0.303` gives Spearman 0.39, median ratio 1.30, 37% within 3x and 76% within 10x, versus 28% and 54% for the best linear share (33.6) and 9% and 23% for the version 1 constants. DECISION PENDING with the user: adopt the power-law mapping (Trends kept only as a confidence signal) or keep the section 5 model with share 33.6.
-- [ ] Phase 6 exit gate passed (blocked on 6.1)
+- [x] 6.3 Constants updated and results recorded (user chose the power law on 2026-09-06): `YOUTUBE_SCORING.VOLUME_POWER_LAW = { coefficient: 4815, exponent: 0.303 }`, `ESTIMATOR_VERSION` 2, the benchmark constants and share model removed, one Trends request per research instead of two, formula tests and section 5 updated. Achieved against VidIQ on the 138 anchored unbounded keywords: median ratio 1.30, 37% within 3x, 76% within 10x, Spearman 0.39; on all 154 anchored rows including VidIQ's "<N" bounds: median ratio 1.69, 33% within 3x, 68% within 10x, Spearman 0.46 (`docs/seoforge/calibration/fit-2026-09-06-power-law.json`, re-run 0.45 USD without Trends; the response cache in `~/.cache/seo-forge/youtube-calibration/` now makes further re-runs free). Run history: first run on 2026-09-06 (0.96 USD, full fit in `docs/seoforge/calibration/fit-2026-09-06.json`): 154 of 182 keywords have a Google Ads anchor (the 28 without are adult, music, or brand terms), 140 have a Trends signal. Findings: VidIQ volume is about 34x Google volume at the median but the ratio falls steeply with size (median 100x below 1K Google searches, 1.2x above 100K), so the linear "share" model in section 5 cannot reproduce VidIQ's scale at both ends; Trends scaling does not improve rank agreement (Spearman 0.464 with it, 0.459 without); our competition and overall rank weakly against VidIQ's (0.14 and 0.09). On the 138 anchored, unbounded rows a power law `estimate = 4815 * anchor^0.303` gives Spearman 0.39, median ratio 1.30, 37% within 3x and 76% within 10x, versus 28% and 54% for the best linear share (33.6) and 9% and 23% for the version 1 constants. The user chose the power law; Trends is kept as the seed's confidence signal only.
+- [x] Phase 6 exit gate passed: results recorded above, `ESTIMATOR_VERSION` bumped to 2, formula tests updated, `pnpm test` passes apart from the SAM skills list assertion that awaits the user's decision (Phase 5.3).
 
 Phase 7
 

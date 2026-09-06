@@ -1,0 +1,1657 @@
+{
+  "powerLaw": {
+    "coefficient": 4815,
+    "exponent": 0.303
+  },
+  "stats": {
+    "sampleCount": 182,
+    "anchoredCount": 154,
+    "fittedCount": 138,
+    "medianRatio": 1.6938609158221745,
+    "within3x": 0.331,
+    "within10x": 0.682,
+    "spearman": 0.4594911330820322,
+    "competitionSpearman": 0.11489162399547624,
+    "overallSpearman": 0.023531928438373203
+  },
+  "rows": [
+    {
+      "keyword": "tldr",
+      "vidiqVolume": 140327,
+      "anchorVolume": 135000,
+      "competition": 61,
+      "estimate": 172619,
+      "ratio": 1.2301196491053041,
+      "overallScore": 58
+    },
+    {
+      "keyword": "tldr news",
+      "vidiqVolume": 213530,
+      "anchorVolume": 1300,
+      "competition": 59,
+      "estimate": 42279,
+      "ratio": 0.19800028099096145,
+      "overallScore": 56
+    },
+    {
+      "keyword": "news tldr",
+      "vidiqVolume": 64046,
+      "anchorVolume": 10,
+      "competition": 59,
+      "estimate": 9674,
+      "ratio": 0.15104768447678232,
+      "overallScore": 52
+    },
+    {
+      "keyword": "tldr news global",
+      "vidiqVolume": 61342,
+      "anchorVolume": 320,
+      "competition": 61,
+      "estimate": 27648,
+      "ratio": 0.45071892015258713,
+      "overallScore": 54
+    },
+    {
+      "keyword": "nepal flood",
+      "vidiqVolume": 4049558,
+      "anchorVolume": 390,
+      "competition": 43,
+      "estimate": 29355,
+      "ratio": 0.007248939266952097,
+      "overallScore": 65
+    },
+    {
+      "keyword": "nepal china border flood",
+      "vidiqVolume": 53133,
+      "anchorVolume": 10,
+      "competition": 47,
+      "estimate": 9674,
+      "ratio": 0.1820714057177272,
+      "overallScore": 59
+    },
+    {
+      "keyword": "bbc news",
+      "vidiqVolume": 711543,
+      "anchorVolume": 2240000,
+      "competition": 55,
+      "estimate": 404316,
+      "ratio": 0.5682242675425098,
+      "overallScore": 65
+    },
+    {
+      "keyword": "kathmandu hospital",
+      "vidiqVolume": 4423,
+      "anchorVolume": 90,
+      "competition": 30,
+      "estimate": 18825,
+      "ratio": 4.256160976712638,
+      "overallScore": 71
+    },
+    {
+      "keyword": "anime",
+      "vidiqVolume": 3609797,
+      "anchorVolume": 1220000,
+      "competition": 54,
+      "estimate": 336328,
+      "ratio": 0.09317089021903448,
+      "overallScore": 65
+    },
+    {
+      "keyword": "anime shorts",
+      "vidiqVolume": 279071,
+      "anchorVolume": 1600,
+      "competition": null,
+      "estimate": 45024,
+      "ratio": 0.16133528743581382,
+      "overallScore": 62
+    },
+    {
+      "keyword": "sword art online",
+      "vidiqVolume": 150013,
+      "anchorVolume": 90500,
+      "competition": 61,
+      "estimate": 152919,
+      "ratio": 1.0193716544566138,
+      "overallScore": 58
+    },
+    {
+      "keyword": "sword art online movie",
+      "vidiqVolume": 3975,
+      "anchorVolume": 4400,
+      "competition": 56,
+      "estimate": 61173,
+      "ratio": 15.389433962264151,
+      "overallScore": 59
+    },
+    {
+      "keyword": "dragonball",
+      "vidiqVolume": 113206,
+      "anchorVolume": 165000,
+      "competition": 62,
+      "estimate": 183440,
+      "ratio": 1.6204088122537674,
+      "overallScore": 58
+    },
+    {
+      "keyword": "sao explained",
+      "vidiqVolume": 4722,
+      "anchorVolume": 10,
+      "competition": 58,
+      "estimate": 9674,
+      "ratio": 2.0487081745023294,
+      "overallScore": 53
+    },
+    {
+      "keyword": "gundam seed",
+      "vidiqVolume": 28293,
+      "anchorVolume": 12100,
+      "competition": 54,
+      "estimate": 83115,
+      "ratio": 2.9376524228607783,
+      "overallScore": 61
+    },
+    {
+      "keyword": "jesus yamato",
+      "vidiqVolume": 750,
+      "anchorVolume": 90,
+      "competition": 50,
+      "estimate": 18825,
+      "ratio": 25.1,
+      "overallScore": 60
+    },
+    {
+      "keyword": "glass relfection",
+      "vidiqVolume": 750,
+      "anchorVolume": 720,
+      "competition": 53,
+      "estimate": 35348,
+      "ratio": 47.13066666666667,
+      "overallScore": 60
+    },
+    {
+      "keyword": "kira yamato",
+      "vidiqVolume": 3891,
+      "anchorVolume": 2400,
+      "competition": 49,
+      "estimate": 50910,
+      "ratio": 13.084040092521203,
+      "overallScore": 63
+    },
+    {
+      "keyword": "strike freedom",
+      "vidiqVolume": 4103,
+      "anchorVolume": 1300,
+      "competition": 55,
+      "estimate": 42279,
+      "ratio": 10.304411406288082,
+      "overallScore": 59
+    },
+    {
+      "keyword": "rising freedom gundam",
+      "vidiqVolume": 4870,
+      "anchorVolume": 1300,
+      "competition": 42,
+      "estimate": 42279,
+      "ratio": 8.681519507186858,
+      "overallScore": 67
+    },
+    {
+      "keyword": "ocean studios",
+      "vidiqVolume": 750,
+      "anchorVolume": 170,
+      "competition": null,
+      "estimate": 22826,
+      "ratio": 30.434666666666665,
+      "overallScore": 60
+    },
+    {
+      "keyword": "femdom",
+      "vidiqVolume": 103138,
+      "anchorVolume": null,
+      "competition": null,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "femdom asmr",
+      "vidiqVolume": 29613,
+      "anchorVolume": 1900,
+      "competition": null,
+      "estimate": 47431,
+      "ratio": 1.6016952014318036,
+      "overallScore": 62
+    },
+    {
+      "keyword": "sesiones femdom",
+      "vidiqVolume": 13050,
+      "anchorVolume": null,
+      "competition": null,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "femdom sph",
+      "vidiqVolume": 12425,
+      "anchorVolume": 1000,
+      "competition": null,
+      "estimate": 39048,
+      "ratio": 3.142696177062374,
+      "overallScore": 62
+    },
+    {
+      "keyword": "asmr",
+      "vidiqVolume": 15242403,
+      "anchorVolume": 246000,
+      "competition": 49,
+      "estimate": 207038,
+      "ratio": 0.013583028870185363,
+      "overallScore": 67
+    },
+    {
+      "keyword": "mommy asmr",
+      "vidiqVolume": 1222029,
+      "anchorVolume": 40500,
+      "competition": 56,
+      "estimate": 119855,
+      "ratio": 0.0980786871669985,
+      "overallScore": 61
+    },
+    {
+      "keyword": "ai asmr",
+      "vidiqVolume": 895371,
+      "anchorVolume": 3600,
+      "competition": 51,
+      "estimate": 57565,
+      "ratio": 0.06429178519295353,
+      "overallScore": 62
+    },
+    {
+      "keyword": "asmr sleep",
+      "vidiqVolume": 624327,
+      "anchorVolume": 6600,
+      "competition": 64,
+      "estimate": 69170,
+      "ratio": 0.11079130007191744,
+      "overallScore": 54
+    },
+    {
+      "keyword": "asmr university",
+      "vidiqVolume": 87786,
+      "anchorVolume": 320,
+      "competition": 51,
+      "estimate": 27648,
+      "ratio": 0.3149477137584581,
+      "overallScore": 60
+    },
+    {
+      "keyword": "male asmr",
+      "vidiqVolume": 21558,
+      "anchorVolume": 390,
+      "competition": 54,
+      "estimate": 29355,
+      "ratio": 1.361675480100195,
+      "overallScore": 59
+    },
+    {
+      "keyword": "dinosaur roleplay",
+      "vidiqVolume": 4130,
+      "anchorVolume": 40,
+      "competition": 55,
+      "estimate": 14724,
+      "ratio": 3.5651331719128327,
+      "overallScore": 56
+    },
+    {
+      "keyword": "ugc",
+      "vidiqVolume": 471709,
+      "anchorVolume": 74000,
+      "competition": 41,
+      "estimate": 143871,
+      "ratio": 0.30499948061198745,
+      "overallScore": 71
+    },
+    {
+      "keyword": "how to become ugc creator",
+      "vidiqVolume": 7859,
+      "anchorVolume": 210,
+      "competition": 38,
+      "estimate": 24335,
+      "ratio": 3.0964499300165413,
+      "overallScore": 67
+    },
+    {
+      "keyword": "ugc advice",
+      "vidiqVolume": 4017,
+      "anchorVolume": null,
+      "competition": 33,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "conversion optimization",
+      "vidiqVolume": 7254,
+      "anchorVolume": 135000,
+      "competition": 39,
+      "estimate": 172619,
+      "ratio": 23.796388199614007,
+      "overallScore": 73
+    },
+    {
+      "keyword": "ai ugc",
+      "vidiqVolume": 320903,
+      "anchorVolume": 1600,
+      "competition": 33,
+      "estimate": 45024,
+      "ratio": 0.14030407942587012,
+      "overallScore": 72
+    },
+    {
+      "keyword": "ai ugc ads",
+      "vidiqVolume": 276847,
+      "anchorVolume": 260,
+      "competition": 35,
+      "estimate": 25962,
+      "ratio": 0.0937774294104686,
+      "overallScore": 69
+    },
+    {
+      "keyword": "ugc ads",
+      "vidiqVolume": 222713,
+      "anchorVolume": 1300,
+      "competition": 34,
+      "estimate": 42279,
+      "ratio": 0.18983624664927506,
+      "overallScore": 71
+    },
+    {
+      "keyword": "prince william",
+      "vidiqVolume": 240931,
+      "anchorVolume": 201000,
+      "competition": 27,
+      "estimate": 194744,
+      "ratio": 0.8082978114065853,
+      "overallScore": 80
+    },
+    {
+      "keyword": "monarchy",
+      "vidiqVolume": 18175,
+      "anchorVolume": 368000,
+      "competition": 52,
+      "estimate": 233910,
+      "ratio": 12.869876203576341,
+      "overallScore": 66
+    },
+    {
+      "keyword": "church of england",
+      "vidiqVolume": 4437,
+      "anchorVolume": 12100,
+      "competition": 33,
+      "estimate": 83115,
+      "ratio": 18.732251521298174,
+      "overallScore": 74
+    },
+    {
+      "keyword": "royal engagement",
+      "vidiqVolume": 4501,
+      "anchorVolume": 110,
+      "competition": 50,
+      "estimate": 20005,
+      "ratio": 4.444567873805821,
+      "overallScore": 60
+    },
+    {
+      "keyword": "solo leveling",
+      "vidiqVolume": 853280,
+      "anchorVolume": 368000,
+      "competition": 67,
+      "estimate": 233910,
+      "ratio": 0.2741304144009001,
+      "overallScore": 54
+    },
+    {
+      "keyword": "solo leveling trailer",
+      "vidiqVolume": 154825,
+      "anchorVolume": 1000,
+      "competition": 66,
+      "estimate": 39048,
+      "ratio": 0.25220733085741964,
+      "overallScore": 51
+    },
+    {
+      "keyword": "bellion",
+      "vidiqVolume": 3345,
+      "anchorVolume": 2400,
+      "competition": 88,
+      "estimate": 50910,
+      "ratio": 15.219730941704036,
+      "overallScore": 31
+    },
+    {
+      "keyword": "diego resume",
+      "vidiqVolume": 53133,
+      "anchorVolume": 10,
+      "competition": 58,
+      "estimate": 9674,
+      "ratio": 0.1820714057177272,
+      "overallScore": 53
+    },
+    {
+      "keyword": "princess diana",
+      "vidiqVolume": 305580,
+      "anchorVolume": 301000,
+      "competition": 42,
+      "estimate": 220091,
+      "ratio": 0.7202401989659009,
+      "overallScore": 72
+    },
+    {
+      "keyword": "diana princess of wales",
+      "vidiqVolume": 4840,
+      "anchorVolume": 74000,
+      "competition": 60,
+      "estimate": 143871,
+      "ratio": 29.725413223140496,
+      "overallScore": 59
+    },
+    {
+      "keyword": "england royal family history",
+      "vidiqVolume": 750,
+      "anchorVolume": 590,
+      "competition": 59,
+      "estimate": 33279,
+      "ratio": 44.372,
+      "overallScore": 56
+    },
+    {
+      "keyword": "historical documentary",
+      "vidiqVolume": 66734,
+      "anchorVolume": 6600,
+      "competition": 69,
+      "estimate": 69170,
+      "ratio": 1.0365031318368447,
+      "overallScore": 50
+    },
+    {
+      "keyword": "deep house music",
+      "vidiqVolume": 404669,
+      "anchorVolume": 6600,
+      "competition": 68,
+      "estimate": 69170,
+      "ratio": 0.17092982165671203,
+      "overallScore": 51
+    },
+    {
+      "keyword": "chill mix",
+      "vidiqVolume": 115704,
+      "anchorVolume": 320,
+      "competition": 77,
+      "estimate": 27648,
+      "ratio": 0.238954573739888,
+      "overallScore": 41
+    },
+    {
+      "keyword": "moody house music",
+      "vidiqVolume": 750,
+      "anchorVolume": 10,
+      "competition": 65,
+      "estimate": 9674,
+      "ratio": 12.898666666666667,
+      "overallScore": 48
+    },
+    {
+      "keyword": "sunset house",
+      "vidiqVolume": 11394,
+      "anchorVolume": 1900,
+      "competition": 64,
+      "estimate": 47431,
+      "ratio": 4.162804985079867,
+      "overallScore": 53
+    },
+    {
+      "keyword": "deep house relaxing work music",
+      "vidiqVolume": 53133,
+      "anchorVolume": null,
+      "competition": 62,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "arabic deep house music",
+      "vidiqVolume": 40765,
+      "anchorVolume": 30,
+      "competition": 51,
+      "estimate": 13495,
+      "ratio": 0.3310437875628603,
+      "overallScore": 58
+    },
+    {
+      "keyword": "deep house car music",
+      "vidiqVolume": 32985,
+      "anchorVolume": 10,
+      "competition": 58,
+      "estimate": 9674,
+      "ratio": 0.2932848264362589,
+      "overallScore": 53
+    },
+    {
+      "keyword": "baby lullaby",
+      "vidiqVolume": 66734,
+      "anchorVolume": null,
+      "competition": 90,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "brahms lullaby dream baby sleep",
+      "vidiqVolume": 85194,
+      "anchorVolume": null,
+      "competition": 77,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "baby lullaby songs go to sleep",
+      "vidiqVolume": 58623,
+      "anchorVolume": null,
+      "competition": 88,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "baby lullaby music",
+      "vidiqVolume": 24369,
+      "anchorVolume": null,
+      "competition": 90,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "baby mozart",
+      "vidiqVolume": 55887,
+      "anchorVolume": null,
+      "competition": 83,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "bedtime videos",
+      "vidiqVolume": 4414,
+      "anchorVolume": 140,
+      "competition": 80,
+      "estimate": 21522,
+      "ratio": 4.875849569551427,
+      "overallScore": 38
+    },
+    {
+      "keyword": "aquarium lullaby",
+      "vidiqVolume": 3475,
+      "anchorVolume": 210,
+      "competition": 92,
+      "estimate": 24335,
+      "ratio": 7.002877697841726,
+      "overallScore": 24
+    },
+    {
+      "keyword": "forest music",
+      "vidiqVolume": 55887,
+      "anchorVolume": 480,
+      "competition": 73,
+      "estimate": 31262,
+      "ratio": 0.5593787463989837,
+      "overallScore": 45
+    },
+    {
+      "keyword": "music for studying",
+      "vidiqVolume": 561916,
+      "anchorVolume": 2900,
+      "competition": 81,
+      "estimate": 53914,
+      "ratio": 0.09594672513329394,
+      "overallScore": 39
+    },
+    {
+      "keyword": "mystical nature music",
+      "vidiqVolume": 750,
+      "anchorVolume": null,
+      "competition": 76,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "magical fireflies",
+      "vidiqVolume": 750,
+      "anchorVolume": 170,
+      "competition": 51,
+      "estimate": 22826,
+      "ratio": 30.434666666666665,
+      "overallScore": 60
+    },
+    {
+      "keyword": "enchanted forest music",
+      "vidiqVolume": 29322,
+      "anchorVolume": 110,
+      "competition": 75,
+      "estimate": 20005,
+      "ratio": 0.6822522338176114,
+      "overallScore": 42
+    },
+    {
+      "keyword": "elwynn forest music",
+      "vidiqVolume": 20350,
+      "anchorVolume": 40,
+      "competition": 58,
+      "estimate": 14724,
+      "ratio": 0.7235380835380836,
+      "overallScore": 54
+    },
+    {
+      "keyword": "music forest",
+      "vidiqVolume": 17689,
+      "anchorVolume": 480,
+      "competition": 71,
+      "estimate": 31262,
+      "ratio": 1.7673130193905817,
+      "overallScore": 47
+    },
+    {
+      "keyword": "asmongold",
+      "vidiqVolume": 4816550,
+      "anchorVolume": 135000,
+      "competition": 67,
+      "estimate": 172619,
+      "ratio": 0.03583872273722893,
+      "overallScore": 54
+    },
+    {
+      "keyword": "asmongold clips",
+      "vidiqVolume": 680000,
+      "anchorVolume": 5400,
+      "competition": 71,
+      "estimate": 65090,
+      "ratio": 0.09572058823529411,
+      "overallScore": 48
+    },
+    {
+      "keyword": "asmongold tv",
+      "vidiqVolume": 351270,
+      "anchorVolume": 6600,
+      "competition": 66,
+      "estimate": 69170,
+      "ratio": 0.19691405471574572,
+      "overallScore": 52
+    },
+    {
+      "keyword": "asmongold shorts",
+      "vidiqVolume": 142756,
+      "anchorVolume": 320,
+      "competition": 67,
+      "estimate": 27648,
+      "ratio": 0.19367312056936312,
+      "overallScore": 49
+    },
+    {
+      "keyword": "asmongold youtube",
+      "vidiqVolume": 10003,
+      "anchorVolume": 2400,
+      "competition": 67,
+      "estimate": 50910,
+      "ratio": 5.089473158052584,
+      "overallScore": 51
+    },
+    {
+      "keyword": "asmongold channel",
+      "vidiqVolume": 3604,
+      "anchorVolume": 30,
+      "competition": 66,
+      "estimate": 13495,
+      "ratio": 3.7444506104328523,
+      "overallScore": 48
+    },
+    {
+      "keyword": "zackrawrr",
+      "vidiqVolume": 47568,
+      "anchorVolume": 8100,
+      "competition": 55,
+      "estimate": 73598,
+      "ratio": 1.5472166162125798,
+      "overallScore": 60
+    },
+    {
+      "keyword": "findom ugc",
+      "vidiqVolume": 750,
+      "anchorVolume": null,
+      "competition": 16,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "tiktok shop",
+      "vidiqVolume": 1385436,
+      "anchorVolume": 368000,
+      "competition": 52,
+      "estimate": 233910,
+      "ratio": 0.16883493716057615,
+      "overallScore": 66
+    },
+    {
+      "keyword": "whop creators corner",
+      "vidiqVolume": 750,
+      "anchorVolume": null,
+      "competition": 21,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "tiktok affiliate marketing",
+      "vidiqVolume": 77354,
+      "anchorVolume": 880,
+      "competition": 39,
+      "estimate": 37564,
+      "ratio": 0.4856116037955374,
+      "overallScore": 68
+    },
+    {
+      "keyword": "tiktok tutorial",
+      "vidiqVolume": 15363,
+      "anchorVolume": 390,
+      "competition": 66,
+      "estimate": 29355,
+      "ratio": 1.9107596172622534,
+      "overallScore": 50
+    },
+    {
+      "keyword": "kindle publishing",
+      "vidiqVolume": 3465,
+      "anchorVolume": 8100,
+      "competition": 52,
+      "estimate": 73598,
+      "ratio": 21.24040404040404,
+      "overallScore": 62
+    },
+    {
+      "keyword": "low content kdp",
+      "vidiqVolume": 4474,
+      "anchorVolume": 10,
+      "competition": 31,
+      "estimate": 9674,
+      "ratio": 2.16227089852481,
+      "overallScore": 68
+    },
+    {
+      "keyword": "coloring book",
+      "vidiqVolume": 142756,
+      "anchorVolume": 74000,
+      "competition": 54,
+      "estimate": 143871,
+      "ratio": 1.0078105298551374,
+      "overallScore": 63
+    },
+    {
+      "keyword": "how to start amazon kdp as a beginner",
+      "vidiqVolume": 5287,
+      "anchorVolume": 10,
+      "competition": 45,
+      "estimate": 9674,
+      "ratio": 1.82977113675052,
+      "overallScore": 60
+    },
+    {
+      "keyword": "amazon kindle book publishing by indiasn",
+      "vidiqVolume": 38094,
+      "anchorVolume": null,
+      "competition": 52,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "kindle direct publishing",
+      "vidiqVolume": 26065,
+      "anchorVolume": 201000,
+      "competition": 41,
+      "estimate": 194744,
+      "ratio": 7.471475158258201,
+      "overallScore": 72
+    },
+    {
+      "keyword": "kindle short reads publishing ai",
+      "vidiqVolume": 8874,
+      "anchorVolume": null,
+      "competition": 32,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "amazon affiliate",
+      "vidiqVolume": 140327,
+      "anchorVolume": 40500,
+      "competition": 51,
+      "estimate": 119855,
+      "ratio": 0.8541121808347645,
+      "overallScore": 64
+    },
+    {
+      "keyword": "amazon affiliate marketing",
+      "vidiqVolume": 329617,
+      "anchorVolume": 2400,
+      "competition": 52,
+      "estimate": 50910,
+      "ratio": 0.15445198518280306,
+      "overallScore": 61
+    },
+    {
+      "keyword": "amazon affiliate account kaise banaye",
+      "vidiqVolume": 110700,
+      "anchorVolume": 0,
+      "competition": 38,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "affiliate marketing amazon",
+      "vidiqVolume": 108188,
+      "anchorVolume": 2400,
+      "competition": 32,
+      "estimate": 50910,
+      "ratio": 0.4705697489555219,
+      "overallScore": 73
+    },
+    {
+      "keyword": "elementor ai guide",
+      "vidiqVolume": 750,
+      "anchorVolume": null,
+      "competition": 41,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "elementor ai tutorial",
+      "vidiqVolume": 4216,
+      "anchorVolume": 10,
+      "competition": 39,
+      "estimate": 9674,
+      "ratio": 2.294592030360531,
+      "overallScore": 64
+    },
+    {
+      "keyword": "wordpress",
+      "vidiqVolume": 344793,
+      "anchorVolume": 246000,
+      "competition": 43,
+      "estimate": 207038,
+      "ratio": 0.6004704271838466,
+      "overallScore": 71
+    },
+    {
+      "keyword": "elementor ai review",
+      "vidiqVolume": 750,
+      "anchorVolume": 10,
+      "competition": 32,
+      "estimate": 9674,
+      "ratio": 12.898666666666667,
+      "overallScore": 67
+    },
+    {
+      "keyword": "wordpress theme",
+      "vidiqVolume": 3869,
+      "anchorVolume": 90500,
+      "competition": 46,
+      "estimate": 152919,
+      "ratio": 39.5241664512794,
+      "overallScore": 68
+    },
+    {
+      "keyword": "wordpress themes kostenlos",
+      "vidiqVolume": 750,
+      "anchorVolume": 10,
+      "competition": 38,
+      "estimate": 9674,
+      "ratio": 12.898666666666667,
+      "overallScore": 64
+    },
+    {
+      "keyword": "how to customize & design any wordpress theme",
+      "vidiqVolume": 750,
+      "anchorVolume": null,
+      "competition": 53,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "wordpress course",
+      "vidiqVolume": 61342,
+      "anchorVolume": 390,
+      "competition": 52,
+      "estimate": 29355,
+      "ratio": 0.47854650973232044,
+      "overallScore": 60
+    },
+    {
+      "keyword": "wordpress theme development tutorial",
+      "vidiqVolume": 26511,
+      "anchorVolume": 10,
+      "competition": 46,
+      "estimate": 9674,
+      "ratio": 0.3649051337180793,
+      "overallScore": 60
+    },
+    {
+      "keyword": "astra theme wordpress",
+      "vidiqVolume": 20200,
+      "anchorVolume": 320,
+      "competition": 46,
+      "estimate": 27648,
+      "ratio": 1.3687128712871288,
+      "overallScore": 63
+    },
+    {
+      "keyword": "wordpress fse theme development",
+      "vidiqVolume": 18253,
+      "anchorVolume": 10,
+      "competition": 46,
+      "estimate": 9674,
+      "ratio": 0.5299950693036761,
+      "overallScore": 60
+    },
+    {
+      "keyword": "high school dxd",
+      "vidiqVolume": 36249,
+      "anchorVolume": 201000,
+      "competition": 66,
+      "estimate": 194744,
+      "ratio": 5.372396479902894,
+      "overallScore": 55
+    },
+    {
+      "keyword": "high school dxd op",
+      "vidiqVolume": 25580,
+      "anchorVolume": null,
+      "competition": 60,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "high school dxd op 1",
+      "vidiqVolume": 16776,
+      "anchorVolume": null,
+      "competition": 50,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "high school dxd opening 1",
+      "vidiqVolume": 13279,
+      "anchorVolume": null,
+      "competition": 67,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "funimation",
+      "vidiqVolume": 12106,
+      "anchorVolume": 40500,
+      "competition": 52,
+      "estimate": 119855,
+      "ratio": 9.900462580538576,
+      "overallScore": 64
+    },
+    {
+      "keyword": "hentai",
+      "vidiqVolume": 240931,
+      "anchorVolume": null,
+      "competition": null,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "issei hyoudou",
+      "vidiqVolume": 5241,
+      "anchorVolume": 6600,
+      "competition": 52,
+      "estimate": 69170,
+      "ratio": 13.197863003243656,
+      "overallScore": 62
+    },
+    {
+      "keyword": "martial peak",
+      "vidiqVolume": 7009,
+      "anchorVolume": 4400,
+      "competition": 47,
+      "estimate": 61173,
+      "ratio": 8.727778570409473,
+      "overallScore": 65
+    },
+    {
+      "keyword": "martial peak chapter",
+      "vidiqVolume": 750,
+      "anchorVolume": 110,
+      "competition": 49,
+      "estimate": 20005,
+      "ratio": 26.673333333333332,
+      "overallScore": 60
+    },
+    {
+      "keyword": "peak of true martial arts",
+      "vidiqVolume": 8460,
+      "anchorVolume": 20,
+      "competition": 56,
+      "estimate": 11935,
+      "ratio": 1.410756501182033,
+      "overallScore": 55
+    },
+    {
+      "keyword": "the peak of true martial arts",
+      "vidiqVolume": 5365,
+      "anchorVolume": 90,
+      "competition": 58,
+      "estimate": 18825,
+      "ratio": 3.508853681267474,
+      "overallScore": 55
+    },
+    {
+      "keyword": "martial peak season 2 episode 1",
+      "vidiqVolume": 5271,
+      "anchorVolume": 10,
+      "competition": 39,
+      "estimate": 9674,
+      "ratio": 1.8353253652058432,
+      "overallScore": 64
+    },
+    {
+      "keyword": "swallowed star",
+      "vidiqVolume": 173886,
+      "anchorVolume": 6600,
+      "competition": 39,
+      "estimate": 69170,
+      "ratio": 0.3977893562448961,
+      "overallScore": 70
+    },
+    {
+      "keyword": "swallowed star episode 1",
+      "vidiqVolume": 36422,
+      "anchorVolume": 70,
+      "competition": 69,
+      "estimate": 17445,
+      "ratio": 0.4789687551479875,
+      "overallScore": 47
+    },
+    {
+      "keyword": "吞噬星空 复更",
+      "vidiqVolume": 750,
+      "anchorVolume": null,
+      "competition": 36,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "english sub",
+      "vidiqVolume": 6792,
+      "anchorVolume": 1000,
+      "competition": 45,
+      "estimate": 39048,
+      "ratio": 5.749116607773852,
+      "overallScore": 65
+    },
+    {
+      "keyword": "luo feng",
+      "vidiqVolume": 13515,
+      "anchorVolume": 590,
+      "competition": 35,
+      "estimate": 33279,
+      "ratio": 2.462375138734739,
+      "overallScore": 70
+    },
+    {
+      "keyword": "swallowed star luo feng vs bran",
+      "vidiqVolume": 5424,
+      "anchorVolume": null,
+      "competition": 31,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "throne of seal",
+      "vidiqVolume": 37590,
+      "anchorVolume": 2400,
+      "competition": 62,
+      "estimate": 50910,
+      "ratio": 1.3543495610534717,
+      "overallScore": 55
+    },
+    {
+      "keyword": "ancient love poetry",
+      "vidiqVolume": 3842,
+      "anchorVolume": 1900,
+      "competition": 73,
+      "estimate": 47431,
+      "ratio": 12.345393024466423,
+      "overallScore": 46
+    },
+    {
+      "keyword": "romantic chinese drama",
+      "vidiqVolume": 3281,
+      "anchorVolume": 480,
+      "competition": 57,
+      "estimate": 31262,
+      "ratio": 9.528192624199939,
+      "overallScore": 57
+    },
+    {
+      "keyword": "中国电视剧",
+      "vidiqVolume": 35451,
+      "anchorVolume": 720,
+      "competition": 51,
+      "estimate": 35348,
+      "ratio": 0.9970945812529971,
+      "overallScore": 61
+    },
+    {
+      "keyword": "love between demon and fairy",
+      "vidiqVolume": 750,
+      "anchorVolume": 30,
+      "competition": 67,
+      "estimate": 13495,
+      "ratio": 17.993333333333332,
+      "overallScore": 48
+    },
+    {
+      "keyword": "love between fairy and demon",
+      "vidiqVolume": 4030,
+      "anchorVolume": 140,
+      "competition": 70,
+      "estimate": 21522,
+      "ratio": 5.340446650124069,
+      "overallScore": 47
+    },
+    {
+      "keyword": "three bodies",
+      "vidiqVolume": 750,
+      "anchorVolume": 49500,
+      "competition": 77,
+      "estimate": 127368,
+      "ratio": 169.824,
+      "overallScore": 44
+    },
+    {
+      "keyword": "3 body problem explained",
+      "vidiqVolume": 14134,
+      "anchorVolume": 480,
+      "competition": 70,
+      "estimate": 31262,
+      "ratio": 2.2118296306777983,
+      "overallScore": 47
+    },
+    {
+      "keyword": "john bradley",
+      "vidiqVolume": 4178,
+      "anchorVolume": 3600,
+      "competition": 66,
+      "estimate": 57565,
+      "ratio": 13.778123504068933,
+      "overallScore": 52
+    },
+    {
+      "keyword": "3 body problem ending explained",
+      "vidiqVolume": 750,
+      "anchorVolume": 70,
+      "competition": 71,
+      "estimate": 17445,
+      "ratio": 23.26,
+      "overallScore": 45
+    },
+    {
+      "keyword": "tiger king",
+      "vidiqVolume": 22581,
+      "anchorVolume": 90500,
+      "competition": 63,
+      "estimate": 152919,
+      "ratio": 6.772020725388601,
+      "overallScore": 57
+    },
+    {
+      "keyword": "i saw a tiger",
+      "vidiqVolume": 5026,
+      "anchorVolume": 110,
+      "competition": 52,
+      "estimate": 20005,
+      "ratio": 3.9803024273776364,
+      "overallScore": 59
+    },
+    {
+      "keyword": "screenrant",
+      "vidiqVolume": 87786,
+      "anchorVolume": 60500,
+      "competition": 78,
+      "estimate": 135353,
+      "ratio": 1.5418517759095984,
+      "overallScore": 43
+    },
+    {
+      "keyword": "sea power",
+      "vidiqVolume": 69409,
+      "anchorVolume": 2400,
+      "competition": 45,
+      "estimate": 50910,
+      "ratio": 0.7334783673586999,
+      "overallScore": 66
+    },
+    {
+      "keyword": "phantom of the opera",
+      "vidiqVolume": 234121,
+      "anchorVolume": 301000,
+      "competition": 90,
+      "estimate": 220091,
+      "ratio": 0.9400737225622648,
+      "overallScore": 30
+    },
+    {
+      "keyword": "antonio banderas phantom of the opera",
+      "vidiqVolume": 4049,
+      "anchorVolume": 1000,
+      "competition": 57,
+      "estimate": 39048,
+      "ratio": 9.64386268214374,
+      "overallScore": 57
+    },
+    {
+      "keyword": "sierra boggess",
+      "vidiqVolume": 3297,
+      "anchorVolume": 8100,
+      "competition": 70,
+      "estimate": 73598,
+      "ratio": 22.32271762208068,
+      "overallScore": 49
+    },
+    {
+      "keyword": "best phantom",
+      "vidiqVolume": 3555,
+      "anchorVolume": 70,
+      "competition": 50,
+      "estimate": 17445,
+      "ratio": 4.9071729957805905,
+      "overallScore": 59
+    },
+    {
+      "keyword": "network rail",
+      "vidiqVolume": 4860,
+      "anchorVolume": 880,
+      "competition": 35,
+      "estimate": 37564,
+      "ratio": 7.7292181069958845,
+      "overallScore": 70
+    },
+    {
+      "keyword": "spain rail network",
+      "vidiqVolume": 6269,
+      "anchorVolume": 210,
+      "competition": 43,
+      "estimate": 24335,
+      "ratio": 3.8817993300366886,
+      "overallScore": 65
+    },
+    {
+      "keyword": "most crowded rail network on earth",
+      "vidiqVolume": 5424,
+      "anchorVolume": null,
+      "competition": 42,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "network rail engineering apprenticeship",
+      "vidiqVolume": 5417,
+      "anchorVolume": 10,
+      "competition": 28,
+      "estimate": 9674,
+      "ratio": 1.7858593317334317,
+      "overallScore": 69
+    },
+    {
+      "keyword": "railway track engineer",
+      "vidiqVolume": 750,
+      "anchorVolume": 20,
+      "competition": 45,
+      "estimate": 11935,
+      "ratio": 15.913333333333334,
+      "overallScore": 61
+    },
+    {
+      "keyword": "uk railway jobs",
+      "vidiqVolume": 750,
+      "anchorVolume": 70,
+      "competition": 40,
+      "estimate": 17445,
+      "ratio": 23.26,
+      "overallScore": 65
+    },
+    {
+      "keyword": "jobs db",
+      "vidiqVolume": 750,
+      "anchorVolume": 140,
+      "competition": 32,
+      "estimate": 21522,
+      "ratio": 28.696,
+      "overallScore": 70
+    },
+    {
+      "keyword": "job hunting",
+      "vidiqVolume": 13670,
+      "anchorVolume": 2900,
+      "competition": 52,
+      "estimate": 53914,
+      "ratio": 3.943964886613021,
+      "overallScore": 62
+    },
+    {
+      "keyword": "求職",
+      "vidiqVolume": 4485,
+      "anchorVolume": 170,
+      "competition": 49,
+      "estimate": 22826,
+      "ratio": 5.0894091415830545,
+      "overallScore": 61
+    },
+    {
+      "keyword": "招聘",
+      "vidiqVolume": 4907,
+      "anchorVolume": 1000,
+      "competition": 27,
+      "estimate": 39048,
+      "ratio": 7.957611575300591,
+      "overallScore": 75
+    },
+    {
+      "keyword": "linkedin marketing",
+      "vidiqVolume": 69409,
+      "anchorVolume": 880,
+      "competition": 46,
+      "estimate": 37564,
+      "ratio": 0.5411978273710902,
+      "overallScore": 64
+    },
+    {
+      "keyword": "linkedin ads setup",
+      "vidiqVolume": 3750,
+      "anchorVolume": 10,
+      "competition": 28,
+      "estimate": 9674,
+      "ratio": 2.5797333333333334,
+      "overallScore": 69
+    },
+    {
+      "keyword": "claude code",
+      "vidiqVolume": 3167717,
+      "anchorVolume": 550000,
+      "competition": 49,
+      "estimate": 264196,
+      "ratio": 0.08340265244654116,
+      "overallScore": 68
+    },
+    {
+      "keyword": "boris cherny claude code workflow",
+      "vidiqVolume": 3437,
+      "anchorVolume": 140,
+      "competition": 44,
+      "estimate": 21522,
+      "ratio": 6.26185627000291,
+      "overallScore": 64
+    },
+    {
+      "keyword": "claude code without claude",
+      "vidiqVolume": 750,
+      "anchorVolume": 10,
+      "competition": 46,
+      "estimate": 9674,
+      "ratio": 12.898666666666667,
+      "overallScore": 60
+    },
+    {
+      "keyword": "claude subagents",
+      "vidiqVolume": 26277,
+      "anchorVolume": 1900,
+      "competition": 42,
+      "estimate": 47431,
+      "ratio": 1.8050386269361038,
+      "overallScore": 67
+    },
+    {
+      "keyword": "n8n",
+      "vidiqVolume": 1507223,
+      "anchorVolume": 201000,
+      "competition": 49,
+      "estimate": 194744,
+      "ratio": 0.12920715779947625,
+      "overallScore": 67
+    },
+    {
+      "keyword": "n8n full course",
+      "vidiqVolume": 504753,
+      "anchorVolume": 30,
+      "competition": 53,
+      "estimate": 13495,
+      "ratio": 0.026735849019223264,
+      "overallScore": 57
+    },
+    {
+      "keyword": "n8n tutorial",
+      "vidiqVolume": 245457,
+      "anchorVolume": 720,
+      "competition": 51,
+      "estimate": 35348,
+      "ratio": 0.14400893028106757,
+      "overallScore": 61
+    },
+    {
+      "keyword": "n8n tutorial for beginners",
+      "vidiqVolume": 199658,
+      "anchorVolume": 90,
+      "competition": 50,
+      "estimate": 18825,
+      "ratio": 0.09428622945236355,
+      "overallScore": 60
+    },
+    {
+      "keyword": "n8n hacks",
+      "vidiqVolume": 4381,
+      "anchorVolume": 10,
+      "competition": 32,
+      "estimate": 9674,
+      "ratio": 2.2081716503081488,
+      "overallScore": 67
+    },
+    {
+      "keyword": "simple english automation",
+      "vidiqVolume": 750,
+      "anchorVolume": null,
+      "competition": 48,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "epic music",
+      "vidiqVolume": 618324,
+      "anchorVolume": 2400,
+      "competition": 62,
+      "estimate": 50910,
+      "ratio": 0.0823354746055466,
+      "overallScore": 55
+    },
+    {
+      "keyword": "orchestral",
+      "vidiqVolume": 35833,
+      "anchorVolume": 74000,
+      "competition": 71,
+      "estimate": 143871,
+      "ratio": 4.015042000390701,
+      "overallScore": 50
+    },
+    {
+      "keyword": "background music no copyright",
+      "vidiqVolume": 1214703,
+      "anchorVolume": 110,
+      "competition": 77,
+      "estimate": 20005,
+      "ratio": 0.016469046343015537,
+      "overallScore": 41
+    },
+    {
+      "keyword": "beautiful instrumental",
+      "vidiqVolume": 9169,
+      "anchorVolume": 90,
+      "competition": 85,
+      "estimate": 18825,
+      "ratio": 2.0531137528629078,
+      "overallScore": 33
+    },
+    {
+      "keyword": "epic music no copyright",
+      "vidiqVolume": 190340,
+      "anchorVolume": 20,
+      "competition": 78,
+      "estimate": 11935,
+      "ratio": 0.06270358306188925,
+      "overallScore": 39
+    },
+    {
+      "keyword": "epic battle music",
+      "vidiqVolume": 108188,
+      "anchorVolume": 590,
+      "competition": 59,
+      "estimate": 33279,
+      "ratio": 0.3076034310644434,
+      "overallScore": 56
+    },
+    {
+      "keyword": "epic trailer music",
+      "vidiqVolume": 90367,
+      "anchorVolume": 140,
+      "competition": 71,
+      "estimate": 21522,
+      "ratio": 0.2381621609658393,
+      "overallScore": 46
+    },
+    {
+      "keyword": "motivational gym music",
+      "vidiqVolume": 8801,
+      "anchorVolume": 70,
+      "competition": 63,
+      "estimate": 17445,
+      "ratio": 1.9821611180547665,
+      "overallScore": 51
+    },
+    {
+      "keyword": "motivational gym music instrumental",
+      "vidiqVolume": 5390,
+      "anchorVolume": null,
+      "competition": 77,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "motivational energetic. gym vibe music",
+      "vidiqVolume": 5169,
+      "anchorVolume": null,
+      "competition": 80,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "gym motivational music phonk",
+      "vidiqVolume": 5060,
+      "anchorVolume": null,
+      "competition": 72,
+      "estimate": null,
+      "ratio": null,
+      "overallScore": null
+    },
+    {
+      "keyword": "gym workout songs",
+      "vidiqVolume": 47568,
+      "anchorVolume": 480,
+      "competition": 70,
+      "estimate": 31262,
+      "ratio": 0.6572065253952237,
+      "overallScore": 47
+    },
+    {
+      "keyword": "workout motivation music",
+      "vidiqVolume": 33525,
+      "anchorVolume": 720,
+      "competition": 65,
+      "estimate": 35348,
+      "ratio": 1.0543773303504846,
+      "overallScore": 52
+    },
+    {
+      "keyword": "pump up music",
+      "vidiqVolume": 15965,
+      "anchorVolume": 1600,
+      "competition": 83,
+      "estimate": 45024,
+      "ratio": 2.8201691199498904,
+      "overallScore": 36
+    },
+    {
+      "keyword": "mr beast",
+      "vidiqVolume": 18553340,
+      "anchorVolume": 673000,
+      "competition": 82,
+      "estimate": 280857,
+      "ratio": 0.015137813461080323,
+      "overallScore": 40
+    },
+    {
+      "keyword": "mr beast gaming",
+      "vidiqVolume": 1085502,
+      "anchorVolume": 18100,
+      "competition": 92,
+      "estimate": 93902,
+      "ratio": 0.08650559833146323,
+      "overallScore": 26
+    },
+    {
+      "keyword": "mr beast rizz",
+      "vidiqVolume": 742903,
+      "anchorVolume": 210,
+      "competition": 64,
+      "estimate": 24335,
+      "ratio": 0.03275663175407826,
+      "overallScore": 51
+    },
+    {
+      "keyword": "mr beast 2",
+      "vidiqVolume": 455073,
+      "anchorVolume": 480,
+      "competition": 85,
+      "estimate": 31262,
+      "ratio": 0.06869667064405051,
+      "overallScore": 34
+    }
+  ]
+}

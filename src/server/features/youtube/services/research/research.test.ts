@@ -71,22 +71,13 @@ function mockClient() {
     }),
   );
   const explore = vi.fn<DataforseoClient["trends"]["explore"]>(
-    async ({ keywords }) =>
-      keywords.length === 1
-        ? {
-            graph: null,
-            queries: {
-              top: [{ query: "sourdough bread", value: 100 }],
-              rising: [{ query: "bake bread at home", value: 5000 }],
-            },
-          }
-        : {
-            graph: {
-              keywords,
-              points: [{ values: [50, 100] }],
-            },
-            queries: null,
-          },
+    async ({ keywords }) => ({
+      graph: { keywords, points: [{ values: [50] }] },
+      queries: {
+        top: [{ query: "sourdough bread", value: 100 }],
+        rising: [{ query: "bake bread at home", value: 5000 }],
+      },
+    }),
   );
   const adsSearchVolume = vi.fn<
     DataforseoClient["keywords"]["adsSearchVolume"]
@@ -127,11 +118,11 @@ describe("youtube research", () => {
     const result = await research(input, billingCustomer);
 
     // Section 4 call budget: seed SERP + serpRowLimit row SERPs, video info per
-    // seed result, two Trends requests, one bulk Ads call, 36 suggest calls.
+    // seed result, one Trends request, one bulk Ads call, 36 suggest calls.
     expect(result.diagnostics.apiCalls).toEqual({
       youtubeSerp: 1 + 2,
       videoInfo: 2,
-      trends: 2,
+      trends: 1,
       adsSearchVolume: 1,
       suggest: 36,
     });
@@ -143,12 +134,13 @@ describe("youtube research", () => {
       "sourdough bread",
     ]);
 
-    // Seed: share = (50/100) * 300k / 100k = 1.5 => 150k, high confidence,
-    // competition from video info (subscribers present).
+    // Seed: power law of the 100k anchor, high confidence because Trends shows
+    // interest; competition from video info (subscribers present).
+    const { coefficient, exponent } = YOUTUBE_SCORING.VOLUME_POWER_LAW;
     expect(result.seed).toMatchObject({
       keyword: "bake bread",
       kind: "seed",
-      searchVolume: 150_000,
+      searchVolume: Math.round(coefficient * 100_000 ** exponent),
       volumeConfidence: "high",
       wordCount: 2,
       videoCount: 2,
@@ -158,10 +150,6 @@ describe("youtube research", () => {
 
     // Candidates ranked by anchor; the top two received a SERP, the unanchored
     // one is low confidence with no volume and no SERP.
-    const candidateShare =
-      YOUTUBE_SCORING.DEFAULT_YOUTUBE_SHARE +
-      (1.5 - YOUTUBE_SCORING.DEFAULT_YOUTUBE_SHARE) *
-        YOUTUBE_SCORING.CANDIDATE_SHARE_DAMPING;
     expect(result.rows.map((row) => row.keyword)).toEqual([
       "sourdough bread",
       "bake bread at home",
@@ -169,7 +157,7 @@ describe("youtube research", () => {
     ]);
     expect(result.rows[0]).toMatchObject({
       kind: "related",
-      searchVolume: Math.round(40_000 * candidateShare),
+      searchVolume: Math.round(coefficient * 40_000 ** exponent),
       volumeConfidence: "medium",
     });
     expect(result.rows[0]?.competition).not.toBeNull();
@@ -213,8 +201,6 @@ describe("youtube research", () => {
         anchoredCount: 0,
         serpRowCount: 0,
         seedInterest: null,
-        benchmarkInterest: null,
-        seedYoutubeShare: null,
         apiCalls: {
           youtubeSerp: 0,
           videoInfo: 0,
@@ -241,10 +227,11 @@ describe("youtube research", () => {
 
     const result = await research(input, billingCustomer);
 
+    const { coefficient, exponent } = YOUTUBE_SCORING.VOLUME_POWER_LAW;
     expect(result.seed).toMatchObject({
-      searchVolume: 100_000 * YOUTUBE_SCORING.DEFAULT_YOUTUBE_SHARE,
+      searchVolume: Math.round(coefficient * 100_000 ** exponent),
       volumeConfidence: "medium",
     });
-    expect(result.diagnostics.seedYoutubeShare).toBeNull();
+    expect(result.diagnostics.seedInterest).toBe(0);
   });
 });

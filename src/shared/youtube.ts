@@ -4,10 +4,12 @@
 // numbers. Pure functions only (no I/O) so they are unit-tested once.
 //
 // Design notes (see docs/seoforge/PLAN.md section 5):
-// - YouTube publishes no search volume. `searchVolume` is an ESTIMATE anchored
-//   on Google Ads volume and scaled by a YouTube share derived from Google
-//   Trends (type=youtube). Every row carries a confidence level and every
-//   surface must present the number as an estimate.
+// - YouTube publishes no search volume. `searchVolume` is an ESTIMATE: a
+//   power-law mapping of Google Ads volume calibrated against a VidIQ sample
+//   (docs/seoforge/calibration/). Google Trends (type=youtube) only tells us
+//   whether the seed has any YouTube signal, which sets the confidence. Every
+//   row carries a confidence level and every surface must present the number
+//   as an estimate.
 // - Views per hour is the lifetime average since publish (one snapshot), and
 //   is labelled as such.
 // - Constants are grouped in YOUTUBE_SCORING; bump ESTIMATOR_VERSION whenever a
@@ -78,18 +80,17 @@ export type YoutubeResearchOverview = YoutubeKeywordRow & {
 
 export const YOUTUBE_SCORING = {
   /** Bump on any formula/constant change so cached results are recomputed. */
-  ESTIMATOR_VERSION: 1,
+  ESTIMATOR_VERSION: 2,
   /**
-   * Benchmark keyword whose YouTube monthly volume is assumed known. Sent in the
-   * same Trends request as the seed so the seed's relative interest can be
-   * converted to an absolute estimate. Calibrated against VidIQ in Phase 6.
+   * estimate = coefficient * googleVolume ^ exponent. Fitted on 2026-09-06 to
+   * 138 keywords with both a Google Ads volume and an unbounded VidIQ volume
+   * (docs/seoforge/calibration/fit-2026-09-06.json): median estimate/VidIQ
+   * ratio 1.3, 76% of keywords within one order of magnitude, Spearman 0.39.
+   * VidIQ's volume is not proportional to Google's (about 100x at 1K Google
+   * searches, 1.2x above 100K), which is why the mapping is a power law rather
+   * than a share.
    */
-  BENCHMARK: { keyword: "how to tie a tie", youtubeMonthlyVolume: 300_000 },
-  /** YouTube searches per Google search when Trends gives no signal. */
-  DEFAULT_YOUTUBE_SHARE: 0.3,
-  YOUTUBE_SHARE_BOUNDS: { min: 0.02, max: 4 },
-  /** How far a candidate's share moves from the default toward the seed's. */
-  CANDIDATE_SHARE_DAMPING: 0.5,
+  VOLUME_POWER_LAW: { coefficient: 4815, exponent: 0.303 },
   /** Trends interest at or below this counts as "no data". */
   MIN_TRENDS_INTEREST: 1,
   COMPETITION: {
@@ -315,62 +316,29 @@ export function computeCompetition(
 // Search volume estimate
 // ---------------------------------------------------------------------------
 
-/**
- * Seed YouTube share = (seed interest / benchmark interest) * benchmark YouTube
- * volume / seed Google anchor. Null when Trends has no signal for either term.
- */
-export function computeSeedYoutubeShare(input: {
-  seedInterest: number | null;
-  benchmarkInterest: number | null;
-  anchorVolume: number | null;
-}): number | null {
-  const { seedInterest, benchmarkInterest, anchorVolume } = input;
-  if (
-    seedInterest == null ||
-    benchmarkInterest == null ||
-    anchorVolume == null ||
-    anchorVolume <= 0 ||
-    seedInterest < YOUTUBE_SCORING.MIN_TRENDS_INTEREST ||
-    benchmarkInterest < YOUTUBE_SCORING.MIN_TRENDS_INTEREST
-  ) {
-    return null;
-  }
-  const estimatedYoutubeVolume =
-    (seedInterest / benchmarkInterest) *
-    YOUTUBE_SCORING.BENCHMARK.youtubeMonthlyVolume;
-  const share = estimatedYoutubeVolume / anchorVolume;
-  const { min, max } = YOUTUBE_SCORING.YOUTUBE_SHARE_BOUNDS;
-  return Math.min(max, Math.max(min, share));
+/** True when a Trends (type youtube) interest series shows real signal. */
+export function hasTrendsSignal(interest: number | null): boolean {
+  return interest != null && interest >= YOUTUBE_SCORING.MIN_TRENDS_INTEREST;
 }
 
+/**
+ * Estimated monthly YouTube searches from the Google Ads anchor via the
+ * calibrated power law. Confidence: high when the seed's Trends series shows
+ * YouTube interest, medium when only the anchor exists (all candidates, since
+ * Trends is never bought per candidate), low when Google Ads has no volume.
+ */
 export function estimateSearchVolume(input: {
   anchorVolume: number | null;
-  /** Share derived from Trends for the seed; null when unavailable. */
-  seedShare: number | null;
-  isSeed: boolean;
+  trendsSignal: boolean;
 }): { searchVolume: number | null; volumeConfidence: YoutubeVolumeConfidence } {
-  const { anchorVolume, seedShare, isSeed } = input;
+  const { anchorVolume, trendsSignal } = input;
   if (anchorVolume == null || anchorVolume <= 0) {
     return { searchVolume: null, volumeConfidence: "low" };
   }
-  const base = YOUTUBE_SCORING.DEFAULT_YOUTUBE_SHARE;
-  if (seedShare == null) {
-    return {
-      searchVolume: Math.round(anchorVolume * base),
-      volumeConfidence: "medium",
-    };
-  }
-  if (isSeed) {
-    return {
-      searchVolume: Math.round(anchorVolume * seedShare),
-      volumeConfidence: "high",
-    };
-  }
-  const share =
-    base + (seedShare - base) * YOUTUBE_SCORING.CANDIDATE_SHARE_DAMPING;
+  const { coefficient, exponent } = YOUTUBE_SCORING.VOLUME_POWER_LAW;
   return {
-    searchVolume: Math.round(anchorVolume * share),
-    volumeConfidence: "medium",
+    searchVolume: Math.round(coefficient * anchorVolume ** exponent),
+    volumeConfidence: trendsSignal ? "high" : "medium",
   };
 }
 

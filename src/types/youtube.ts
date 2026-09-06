@@ -27,9 +27,8 @@ export type YoutubeResearchDiagnostics = {
   anchoredCount: number;
   /** Candidate rows that received their own SERP for competition. */
   serpRowCount: number;
+  /** Mean trailing Google Trends (type youtube) interest for the seed; null without signal. */
   seedInterest: number | null;
-  benchmarkInterest: number | null;
-  seedYoutubeShare: number | null;
   apiCalls: YoutubeResearchApiCalls;
 };
 

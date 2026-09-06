@@ -5,107 +5,59 @@ import {
   spearmanCorrelation,
 } from "./youtube-calibration";
 
-const BENCH = "how to tie a tie";
-
 function sample(
   keyword: string,
   vidiqVolume: number,
   anchorVolume: number | null,
-  interest: number | null,
+  extra: Partial<CalibrationSample> = {},
 ): CalibrationSample {
-  return {
-    keyword,
-    vidiqVolume,
-    anchorVolume,
-    interest,
-    benchmarkInterest: 50,
-  };
+  return { keyword, vidiqVolume, anchorVolume, ...extra };
 }
 
 describe("fitYoutubeScoring", () => {
-  it("fits the default share and bounds from implied shares and takes the benchmark volume from the sample", () => {
-    const fit = fitYoutubeScoring(
-      [
-        sample(BENCH, 300_000, 1_000_000, 50),
-        sample("bake bread", 20_000, 100_000, 10),
-        sample("sourdough", 40_000, 100_000, null),
-        sample("obscure", 500, null, null),
-      ],
-      BENCH,
-    );
+  it("recovers an exact power law, skips bounded and unanchored rows, and reports fit quality", () => {
+    // vidiq = 100 * anchor^0.5 exactly
+    const fit = fitYoutubeScoring([
+      sample("a", 1_000, 100),
+      sample("b", 10_000, 10_000),
+      sample("c", 100_000, 1_000_000),
+      sample("bounded", 750, 25, { vidiqIsUpperBound: true }),
+      sample("no anchor", 500, null),
+    ]);
 
-    expect(fit.benchmark).toEqual({
-      keyword: BENCH,
-      youtubeMonthlyVolume: 300_000,
-    });
-    // implied shares: 0.3, 0.2, 0.4 => median 0.3, 5th/95th percentiles 0.21/0.39
-    expect(fit.defaultYoutubeShare).toBe(0.3);
-    expect(fit.youtubeShareBounds).toEqual({ min: 0.21, max: 0.39 });
-    // bake bread: (10/50) * 300k / 100k = 0.6, clamped to 0.39 => 39,000
-    expect(fit.rows[1]).toMatchObject({ estimate: 39_000, ratio: 1.95 });
-    // no Trends signal => default share
-    expect(fit.rows[2]).toMatchObject({ estimate: 30_000, ratio: 0.75 });
-    // no anchor => no estimate
-    expect(fit.rows[3]).toMatchObject({ estimate: null, ratio: null });
+    expect(fit.powerLaw).toEqual({ coefficient: 100, exponent: 0.5 });
     expect(fit.stats).toMatchObject({
-      sampleCount: 4,
-      anchoredCount: 3,
-      withTrendsCount: 2,
+      sampleCount: 5,
+      anchoredCount: 4,
+      fittedCount: 3,
+      spearman: 1,
+      within3x: 1,
+      within10x: 1,
     });
-    expect(fit.stats.medianRatio).toBe(1);
+    // The bounded row is still estimated against its upper bound.
+    expect(fit.rows[3]).toMatchObject({ estimate: 500, ratio: 500 / 750 });
+    expect(fit.rows[4]).toMatchObject({ estimate: null, ratio: null });
   });
-});
 
-describe("fitYoutubeScoring without the benchmark in the sample", () => {
-  it("derives the benchmark volume from the median implied by Trends ratios", () => {
-    const fit = fitYoutubeScoring(
-      [
-        // 10k * 50 / 10 = 50k, 30k * 50 / 25 = 60k, 100k * 50 / 10 = 500k
-        sample("a", 10_000, 50_000, 10),
-        sample("b", 30_000, 50_000, 25),
-        sample("c", 100_000, 50_000, 10),
-        sample("no trends", 5_000, 50_000, null),
-      ],
-      BENCH,
-    );
-
-    expect(fit.benchmark).toEqual({
-      keyword: BENCH,
-      youtubeMonthlyVolume: 60_000,
-    });
-  });
-});
-
-describe("fitYoutubeScoring score correlations", () => {
   it("correlates our competition and overall scores with VidIQ's when both sides exist", () => {
-    const fit = fitYoutubeScoring(
-      [
-        {
-          ...sample("a", 1000, 2000, null),
-          competition: 20,
-          vidiqCompetition: 10,
-          vidiqOverall: 90,
-        },
-        {
-          ...sample("b", 1000, 2000, null),
-          competition: 50,
-          vidiqCompetition: 40,
-          vidiqOverall: 60,
-        },
-        {
-          ...sample("c", 1000, 2000, null),
-          competition: 80,
-          vidiqCompetition: 70,
-          vidiqOverall: 30,
-        },
-        {
-          ...sample("d", 1000, null, null),
-          competition: 90,
-          vidiqCompetition: 95,
-        },
-      ],
-      BENCH,
-    );
+    const fit = fitYoutubeScoring([
+      sample("a", 1000, 2000, {
+        competition: 20,
+        vidiqCompetition: 10,
+        vidiqOverall: 90,
+      }),
+      sample("b", 1000, 2000, {
+        competition: 50,
+        vidiqCompetition: 40,
+        vidiqOverall: 60,
+      }),
+      sample("c", 1000, 2000, {
+        competition: 80,
+        vidiqCompetition: 70,
+        vidiqOverall: 30,
+      }),
+      sample("d", 1000, null, { competition: 90, vidiqCompetition: 95 }),
+    ]);
 
     expect(fit.stats.competitionSpearman).toBe(1);
     // Same estimate everywhere, so our overall falls as competition rises,

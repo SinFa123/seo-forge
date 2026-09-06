@@ -36,7 +36,7 @@ import {
 // callers").
 
 const VOLUME_CAVEAT =
-  'YouTube publishes no search volume: `searchVolume` is an ESTIMATE (Google Ads volume scaled by YouTube-specific Google Trends interest) and every row carries `volumeConfidence` (high / medium / low; low means no anchor and is shown as "< 10"). Report volumes as estimates and mention the confidence.';
+  'YouTube publishes no search volume: `searchVolume` is an ESTIMATE (Google Ads volume mapped through a power law calibrated against VidIQ; Google Trends only sets the confidence of the seed) and every row carries `volumeConfidence` (high / medium / low; low means no Google anchor and is shown as "< 10"). Report volumes as estimates and mention the confidence.';
 
 /** Shared column definitions rendered through the MCP table formatter. */
 function toMcpColumns<Row>(
@@ -92,7 +92,7 @@ export const researchYoutubeKeywordsTool = {
   name: "research_youtube_keywords",
   config: {
     title: "Research YouTube keywords (bulk)",
-    description: `Research 1-5 seed keywords for YouTube: an overview of the seed (estimated monthly YouTube searches with confidence, competition 0-100 from the top 20 videos, overall opportunity 0-100, average views per hour of the top videos) plus up to 200 related, matching, and question keywords with the same metrics. Charges DataForSEO spend per seed: about 0.30 USD at the default serpRowLimit (one YouTube SERP, 20 video-info lookups, two Google Trends requests, one Google Ads volume request, ${YOUTUBE_SERP_ROW_LIMIT_DEFAULT} row SERPs), plus 0.002 USD per extra row SERP; results are cached for 24 hours so repeating a seed is free, and a call that fails at DataForSEO before returning results (for example HTTP 402 when the DataForSEO balance is exhausted) is not charged. ${VOLUME_CAVEAT} Returns per-seed results, so one bad seed does not fail the batch. Use get_youtube_videos for the ranking videos themselves.`,
+    description: `Research 1-5 seed keywords for YouTube: an overview of the seed (estimated monthly YouTube searches with confidence, competition 0-100 from the top 20 videos, overall opportunity 0-100, average views per hour of the top videos) plus up to 200 related, matching, and question keywords with the same metrics. Charges DataForSEO spend per seed: about 0.30 USD at the default serpRowLimit (one YouTube SERP, 20 video-info lookups, one Google Trends request, one Google Ads volume request, ${YOUTUBE_SERP_ROW_LIMIT_DEFAULT} row SERPs), plus 0.002 USD per extra row SERP; results are cached for 24 hours so repeating a seed is free, and a call that fails at DataForSEO before returning results (for example HTTP 402 when the DataForSEO balance is exhausted) is not charged. ${VOLUME_CAVEAT} Returns per-seed results, so one bad seed does not fail the batch. Use get_youtube_videos for the ranking videos themselves.`,
     inputSchema: researchInputSchema,
     outputSchema: {
       results: z.array(
@@ -162,7 +162,7 @@ export const researchYoutubeKeywordsTool = {
             // Payload-level caveats so a consumer that only inspects
             // structuredContent still sees them.
             notes: [
-              "searchVolume is an estimated monthly YouTube search count (Google Ads volume scaled by YouTube Trends interest); report it as an estimate with volumeConfidence.",
+              "searchVolume is an estimated monthly YouTube search count (Google Ads volume mapped through a power law calibrated against VidIQ); report it as an estimate with volumeConfidence.",
               `competition was scored from a YouTube SERP for the seed and the top ${scored} rows by Google volume; competition null on other rows means unscored, not easy.`,
             ],
           };

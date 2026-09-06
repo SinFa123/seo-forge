@@ -69,7 +69,7 @@ export function YoutubeKeywordsTable({
           <SortableHeader
             column={column}
             label="Volume (est.)"
-            helpText="Estimated monthly YouTube searches: Google Ads volume scaled by YouTube-specific Google Trends interest. The badge shows the estimate's confidence."
+            helpText="Estimated monthly YouTube searches: Google Ads volume mapped through a power law calibrated against VidIQ. The badge shows the estimate's confidence."
             align="right"
           />
         ),

@@ -12,6 +12,7 @@ import {
   computeOverallScore,
   countWords,
   estimateSearchVolume,
+  hasTrendsSignal,
   median,
   normalizeYoutubeKeyword,
 } from "@/shared/youtube";
@@ -31,16 +32,15 @@ import { YOUTUBE_FETCH_CONCURRENCY, mapWithConcurrency } from "./helpers";
 import { buildVideoRow, getVideoInfo, toCompetitionInput } from "./video-info";
 import {
   type DataforseoClient,
-  deriveSeedYoutubeShare,
-  fetchSeedTrendsInterest,
   fetchVolumeAnchors,
+  meanRecentInterest,
 } from "./volume";
 
 // SEO Forge: keyword research orchestration for one seed. External calls per
 // run (PLAN.md section 4): seed SERP (1), seed video info (<= 20, cached per
-// video), suggest (~36, free), Trends (2: related queries; seed + benchmark
-// graph), Google Ads volume (1 bulk), and one SERP per candidate row up to
-// `serpRowLimit`. The whole result is cached 24 hours; the key carries the
+// video), suggest (~36, free), Trends (1: seed graph for confidence plus
+// related queries), Google Ads volume (1 bulk), and one SERP per candidate row
+// up to `serpRowLimit`. The whole result is cached 24 hours; the key carries the
 // estimator version so a formula change recomputes rather than serves stale
 // scores.
 
@@ -65,8 +65,6 @@ const cachedResultSchema = z.object({
     anchoredCount: z.number().int(),
     serpRowCount: z.number().int(),
     seedInterest: z.number().nullable(),
-    benchmarkInterest: z.number().nullable(),
-    seedYoutubeShare: z.number().nullable(),
     apiCalls: z.object({
       youtubeSerp: z.number().int(),
       videoInfo: z.number().int(),
@@ -169,20 +167,15 @@ export async function research(
     suggest: 0,
   };
 
-  // Related queries are only available for single-keyword Trends requests, so
-  // the seed's queries and the seed + benchmark interest graph are two calls;
-  // both run alongside the seed SERP and video info.
-  const [seedVideos, seedTrends, trendsInterest] = await Promise.all([
+  // One single-keyword Trends request returns both the seed's interest graph
+  // (confidence signal) and its related queries (candidates).
+  const [seedVideos, seedTrends] = await Promise.all([
     fetchSeedVideoRows(client, seed, market, now, calls),
-    client.trends.explore({
-      keywords: [seed],
-      ...market,
-      type: "youtube",
-      itemTypes: ["google_trends_queries_list"],
-    }),
-    fetchSeedTrendsInterest(client, { ...market, seed }),
+    client.trends.explore({ keywords: [seed], ...market, type: "youtube" }),
   ]);
-  calls.trends += 2;
+  calls.trends += 1;
+  const seedInterest = meanRecentInterest(seedTrends.graph, seed);
+  const trendsSignal = hasTrendsSignal(seedInterest);
   const trendsRelated = {
     top: (seedTrends.queries?.top ?? []).map((entry) => entry.query),
     rising: (seedTrends.queries?.rising ?? []).map((entry) => entry.query),
@@ -213,7 +206,6 @@ export async function research(
     .slice(0, input.serpRowLimit)
     .map((candidate) => candidate.keyword);
 
-  const seedYoutubeShare = deriveSeedYoutubeShare(trendsInterest, seedAnchor);
   const competitionByKeyword = await fetchRowCompetition(
     client,
     serpKeywords,
@@ -224,8 +216,7 @@ export async function research(
 
   const seedVolume = estimateSearchVolume({
     anchorVolume: seedAnchor,
-    seedShare: seedYoutubeShare,
-    isSeed: true,
+    trendsSignal,
   });
   const seedCompetition = computeCompetition(
     seedVideos.map((video) => toCompetitionInput(video, now)),
@@ -249,8 +240,7 @@ export async function research(
   const rows: YoutubeKeywordRow[] = ranked.map((candidate) => {
     const volume = estimateSearchVolume({
       anchorVolume: anchors.get(candidate.keyword) ?? null,
-      seedShare: seedYoutubeShare,
-      isSeed: false,
+      trendsSignal: false,
     });
     const competition = competitionByKeyword.get(candidate.keyword) ?? null;
     return {
@@ -274,9 +264,7 @@ export async function research(
       anchoredCount: [...anchors.values()].filter((value) => value != null)
         .length,
       serpRowCount: serpKeywords.length,
-      seedInterest: trendsInterest.seedInterest,
-      benchmarkInterest: trendsInterest.benchmarkInterest,
-      seedYoutubeShare,
+      seedInterest,
       apiCalls: calls,
     },
     fetchedAt: now.toISOString(),

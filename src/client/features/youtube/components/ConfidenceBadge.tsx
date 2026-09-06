@@ -8,10 +8,10 @@ const STYLES: Record<YoutubeVolumeConfidence, string> = {
 };
 
 const TITLES: Record<YoutubeVolumeConfidence, string> = {
-  high: "High confidence: Google volume anchor and YouTube Trends signal both available for this keyword.",
+  high: "High confidence: Google volume available and Google Trends shows YouTube interest for this keyword.",
   medium:
-    "Medium confidence: Google volume anchor available; the YouTube share is inherited from the seed or a default.",
-  low: "Low confidence: no Google volume anchor, so no estimate is shown.",
+    "Medium confidence: estimated from Google volume alone (Trends is only checked for the seed).",
+  low: "Low confidence: Google has no volume for this term, so no estimate is shown.",
 };
 
 export function ConfidenceBadge({

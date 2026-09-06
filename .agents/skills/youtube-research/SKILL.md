@@ -71,7 +71,7 @@ End with next actions: which videos to make first, whether to research adjacent 
 
 ## Guardrails
 
-- YouTube publishes no search volume. Every volume is an estimate; always call it an estimate and report its confidence. "< 10" means no estimate could be made.
+- YouTube publishes no search volume. Every volume is an estimate (Google Ads volume mapped through a power law calibrated against a VidIQ sample; high confidence means Google Trends also shows YouTube interest for the seed). Always call it an estimate and report its confidence. "< 10" means Google has no volume for the term, so no estimate could be made.
 - Do not invent metrics. If a tool returns null, write `unknown`, in table cells as well as in prose.
 - Keep spend small: default `serpRowLimit`, default video depth, one research call per batch of seeds.
 - Do not call `save_youtube_keywords` without explicit confirmation.
