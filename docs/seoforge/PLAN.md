@@ -531,7 +531,8 @@ The calibration showed the share model fits neither end of the volume range and 
 ### Channels and breakout
 
 The Channels sub-tab is derived from the ranking videos, so it costs nothing extra: one row per distinct channel with subscribers, views summed over its ranking videos, video count, best rank, and the highest channel multiplier.
-A channel is a "breakout" for the keyword when a ranking video has at least `BREAKOUT.channelMultiplier` (3) times the channel's median views, or, without the Data API, when a ranking video's views reach `BREAKOUT.viewsPerSubscriber` (1) times the channel's subscriber count.
+A channel is a "breakout" for the keyword when it has at most `BREAKOUT.maxSubscribers` (500K) subscribers and a ranking video has at least `BREAKOUT.channelMultiplier` (10) times the channel's median views, or, without the Data API, `BREAKOUT.viewsPerSubscriber` (3) times the channel's subscriber count.
+The first draft (3x, no size cap) flagged all 15 channels for "banana bread"; the tuned rule flags 6, all sub-500K creators with outsized hits.
 Formula in `src/shared/youtube-channels.ts`; the service attaches `channels` to every videos result (cached rows only, channels recomputed on read).
 
 ### Overall score (0 to 100)

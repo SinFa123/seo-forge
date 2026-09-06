@@ -53,19 +53,34 @@ describe("summarizeYoutubeChannels", () => {
     });
   });
 
-  it("flags breakout by channel multiplier when available, else by views against subscribers", () => {
+  it("flags breakout only for small channels: by channel multiplier when available, else by views against subscribers", () => {
     const channels = summarizeYoutubeChannels([
-      video(1, "multiplier", 100, {
-        channelMultiplier: 3,
-        subscribersCount: 1_000_000,
+      video(1, "small-hit", 100, {
+        channelMultiplier: 12,
+        subscribersCount: 200_000,
       }),
-      video(2, "small", 20_000, { subscribersCount: 10_000 }),
-      video(3, "big", 20_000, { subscribersCount: 500_000 }),
-      video(4, "unknown", 20_000),
+      video(2, "big-hit", 100, {
+        channelMultiplier: 200,
+        subscribersCount: 4_000_000,
+      }),
+      video(3, "small-normal", 100, {
+        channelMultiplier: 2,
+        subscribersCount: 200_000,
+      }),
+      video(4, "small-no-api", 60_000, { subscribersCount: 10_000 }),
+      video(5, "mid-no-api", 20_000, { subscribersCount: 400_000 }),
+      video(6, "unknown-subs", 20_000),
     ]);
 
     expect(
       Object.fromEntries(channels.map((c) => [c.channelId, c.breakout])),
-    ).toEqual({ multiplier: true, small: true, big: false, unknown: false });
+    ).toEqual({
+      "small-hit": true,
+      "big-hit": false,
+      "small-normal": false,
+      "small-no-api": true,
+      "mid-no-api": false,
+      "unknown-subs": false,
+    });
   });
 });

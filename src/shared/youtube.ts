@@ -113,12 +113,18 @@ export const YOUTUBE_SCORING = {
   /** Minimum other uploads needed for a channel multiplier. */
   MIN_CHANNEL_SAMPLE: 5,
   /**
-   * A channel "breaks out" for a keyword when one of its ranking videos has
-   * at least this many times the channel's median views, or, without the Data
-   * API, when a ranking video's views reach this multiple of the channel's
-   * subscriber count.
+   * A channel "breaks out" for a keyword when it is still small (at most
+   * `maxSubscribers`) and one of its ranking videos has at least
+   * `channelMultiplier` times the channel's median views, or, without the Data
+   * API, `viewsPerSubscriber` times the channel's subscriber count. Big
+   * channels with a hit are not breakouts: the channel, not the topic, drove
+   * the views. Tuned on "banana bread" (15 channels, 6 breakouts) 2026-09-06.
    */
-  BREAKOUT: { channelMultiplier: 3, viewsPerSubscriber: 1 },
+  BREAKOUT: {
+    maxSubscribers: 500_000,
+    channelMultiplier: 10,
+    viewsPerSubscriber: 3,
+  },
 } as const;
 
 // ---------------------------------------------------------------------------

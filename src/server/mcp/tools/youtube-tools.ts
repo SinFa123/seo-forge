@@ -273,7 +273,7 @@ export const getYoutubeVideosTool = {
     const text =
       data.rows.length === 0
         ? `No YouTube results for "${data.keyword}".`
-        : `Top ${data.rows.length} YouTube videos for "${data.keyword}":\n${formatMcpTable(data.rows, VIDEO_COLUMNS)}\n\nChannels behind these videos (${data.channels.filter((c) => c.breakout).length} breakout):\n${formatMcpTable(data.channels, CHANNEL_COLUMNS)}\n\nAvg views/hr = lifetime average since publish (one snapshot, not a live rate); vs channel = views relative to the channel's median recent upload; Breakout = a ranking video has 3x the channel's median views, or, without the Data API, more views than the channel has subscribers.${statusNote}`;
+        : `Top ${data.rows.length} YouTube videos for "${data.keyword}":\n${formatMcpTable(data.rows, VIDEO_COLUMNS)}\n\nChannels behind these videos (${data.channels.filter((c) => c.breakout).length} breakout):\n${formatMcpTable(data.channels, CHANNEL_COLUMNS)}\n\nAvg views/hr = lifetime average since publish (one snapshot, not a live rate); vs channel = views relative to the channel's median recent upload; Breakout = a channel of at most 500K subscribers whose ranking video did at least 10x the channel's median views (or, without the Data API, 3x its subscriber count in views).${statusNote}`;
 
     return mcpResponse({
       text,

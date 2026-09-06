@@ -27,15 +27,16 @@ function isBreakout(input: {
   maxChannelMultiplier: number | null;
   maxVideoViews: number;
 }): boolean {
-  const { channelMultiplier, viewsPerSubscriber } = YOUTUBE_SCORING.BREAKOUT;
+  const { maxSubscribers, channelMultiplier, viewsPerSubscriber } =
+    YOUTUBE_SCORING.BREAKOUT;
+  if (input.subscribersCount == null || input.subscribersCount <= 0) {
+    return false;
+  }
+  if (input.subscribersCount > maxSubscribers) return false;
   if (input.maxChannelMultiplier != null) {
     return input.maxChannelMultiplier >= channelMultiplier;
   }
-  return (
-    input.subscribersCount != null &&
-    input.subscribersCount > 0 &&
-    input.maxVideoViews >= input.subscribersCount * viewsPerSubscriber
-  );
+  return input.maxVideoViews >= input.subscribersCount * viewsPerSubscriber;
 }
 
 /** Distinct channels behind the ranking videos, most viewed first. */
