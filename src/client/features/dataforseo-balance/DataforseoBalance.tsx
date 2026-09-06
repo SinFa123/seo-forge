@@ -23,7 +23,7 @@ export function DataforseoBalance() {
       title="DataForSEO account balance. Updates after each research job."
     >
       <Wallet className="h-4 w-4 shrink-0" />
-      <span className="truncate">DataForSEO</span>
+      <span className="truncate">Balance</span>
       <span className="ml-auto font-medium tabular-nums text-base-content">
         {label}
       </span>
