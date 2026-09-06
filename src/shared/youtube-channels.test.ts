@@ -57,7 +57,7 @@ describe("summarizeYoutubeChannels", () => {
     const channels = summarizeYoutubeChannels([
       video(1, "small-hit", 100, {
         channelMultiplier: 12,
-        subscribersCount: 200_000,
+        subscribersCount: 2_900,
       }),
       video(2, "big-hit", 100, {
         channelMultiplier: 200,
@@ -65,6 +65,10 @@ describe("summarizeYoutubeChannels", () => {
       }),
       video(3, "small-normal", 100, {
         channelMultiplier: 2,
+        subscribersCount: 20_000,
+      }),
+      video(7, "mid-hit", 100, {
+        channelMultiplier: 50,
         subscribersCount: 200_000,
       }),
       video(4, "small-no-api", 60_000, { subscribersCount: 10_000 }),
@@ -80,6 +84,7 @@ describe("summarizeYoutubeChannels", () => {
       "small-normal": false,
       "small-no-api": true,
       "mid-no-api": false,
+      "mid-hit": false,
       "unknown-subs": false,
     });
   });

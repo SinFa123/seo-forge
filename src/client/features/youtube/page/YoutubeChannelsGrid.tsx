@@ -11,7 +11,7 @@ import type { YoutubeVideosResult } from "@/types/youtube";
 // whose ranking video punched far above the channel's usual reach.
 
 const BREAKOUT_HELP =
-  "A channel breaks out on this keyword when it has at most 500K subscribers and a ranking video did at least 10x the channel's median views, or, without the YouTube Data API key, at least 3x its subscriber count in views.";
+  "A channel breaks out on this keyword when it has at most 100K subscribers and a ranking video did at least 10x the channel's median views, or, without the YouTube Data API key, at least 3x its subscriber count in views.";
 
 function ChannelAvatar({ channel }: { channel: YoutubeChannelRow }) {
   if (channel.channelLogoUrl) {

@@ -82,6 +82,7 @@ export function YoutubeResearchPage({
         keyword: request.keyword,
         locationCode: displayedLocationCode,
         locationName: LOCATIONS[displayedLocationCode] || "Unknown",
+        tab: "keywords",
       });
     },
     [addSearch, displayedLocationCode],
@@ -104,6 +105,19 @@ export function YoutubeResearchPage({
     languageCode: routeState.languageCode,
     active: routeState.tab === "videos" || routeState.tab === "channels",
   });
+  // Videos and Channels views are remembered too, so the recent list says
+  // which view of a keyword was open, not only that it was searched.
+  const videosKeyword = videos.data?.keyword;
+  useEffect(() => {
+    if (!videosKeyword) return;
+    if (routeState.tab !== "videos" && routeState.tab !== "channels") return;
+    addSearch({
+      keyword: videosKeyword,
+      locationCode: displayedLocationCode,
+      locationName: LOCATIONS[displayedLocationCode] || "Unknown",
+      tab: routeState.tab,
+    });
+  }, [addSearch, displayedLocationCode, routeState.tab, videosKeyword]);
 
   const form = useYoutubeSearchForm(
     {

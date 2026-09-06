@@ -118,10 +118,11 @@ export const YOUTUBE_SCORING = {
    * `channelMultiplier` times the channel's median views, or, without the Data
    * API, `viewsPerSubscriber` times the channel's subscriber count. Big
    * channels with a hit are not breakouts: the channel, not the topic, drove
-   * the views. Tuned on "banana bread" (15 channels, 6 breakouts) 2026-09-06.
+   * the views. Tuned on "banana bread" (15 channels, 3 breakouts) 2026-09-06;
+   * VidIQ's breakout list is dominated by channels in the low thousands.
    */
   BREAKOUT: {
-    maxSubscribers: 500_000,
+    maxSubscribers: 100_000,
     channelMultiplier: 10,
     viewsPerSubscriber: 3,
   },

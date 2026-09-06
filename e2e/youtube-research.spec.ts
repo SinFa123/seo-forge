@@ -59,8 +59,12 @@ test.describe("YouTube Research", () => {
     await expect
       .poll(() => new URL(page.url()).searchParams.get("q"))
       .toBe(null);
+    // One entry per view of the keyword: Keywords, Videos, Channels.
     await expect(
-      page.getByRole("link", { name: /sourdough bread\s+US/i }),
+      page.getByRole("link", { name: /sourdough bread.*Keywords.*US/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /sourdough bread.*Channels.*US/i }),
     ).toBeVisible();
   });
 

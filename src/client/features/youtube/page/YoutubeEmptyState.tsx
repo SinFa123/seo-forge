@@ -1,9 +1,35 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, History, Search, X, Youtube } from "lucide-react";
+import {
+  Clock,
+  History,
+  Search,
+  Table2,
+  Users,
+  Video,
+  X,
+  Youtube,
+} from "lucide-react";
+import type { YoutubeTab } from "@/types/schemas/youtube";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import type { useYoutubeSearchHistory } from "../hooks/useYoutubeSearchHistory";
 
 type HistoryState = ReturnType<typeof useYoutubeSearchHistory>;
+
+const TAB_LABELS: Record<YoutubeTab, { label: string; icon: typeof Table2 }> = {
+  keywords: { label: "Keywords", icon: Table2 },
+  videos: { label: "Videos", icon: Video },
+  channels: { label: "Channels", icon: Users },
+  saved: { label: "Saved", icon: Table2 },
+};
+
+function formatHistoryTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function YoutubeNoResultsState({
   keyword,
@@ -68,7 +94,11 @@ export function YoutubeSearchHistoryState({
                   from="/p/$projectId/youtube"
                   to="/p/$projectId/youtube"
                   params={{ projectId }}
-                  search={{ q: item.keyword, loc: item.locationCode }}
+                  search={{
+                    q: item.keyword,
+                    loc: item.locationCode,
+                    tab: item.tab === "keywords" ? undefined : item.tab,
+                  }}
                   replace
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"
                 >
@@ -77,17 +107,16 @@ export function YoutubeSearchHistoryState({
                     <p className="truncate font-medium text-base-content">
                       {item.keyword}
                     </p>
-                    <p className="truncate text-sm text-base-content/60">
+                    <p className="flex items-center gap-1.5 truncate text-sm text-base-content/60">
+                      <HistoryTabBadge tab={item.tab} />
+                      <span aria-hidden>·</span>
                       {item.locationName}
                     </p>
                   </div>
                 </Link>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="text-xs text-base-content/40">
-                    {new Date(item.timestamp).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {formatHistoryTime(item.timestamp)}
                   </span>
                   <button
                     type="button"
@@ -115,5 +144,15 @@ export function YoutubeSearchHistoryState({
         </section>
       )}
     </div>
+  );
+}
+
+function HistoryTabBadge({ tab }: { tab: YoutubeTab }) {
+  const { label, icon: Icon } = TAB_LABELS[tab];
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-base-200 px-1.5 py-0.5 text-xs font-medium text-base-content/70">
+      <Icon className="size-3" />
+      {label}
+    </span>
   );
 }
