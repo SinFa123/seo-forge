@@ -5,7 +5,6 @@ import { useEffect, useState, type ComponentType } from "react";
 import {
   ArrowLeftRight,
   Check,
-  CircleHelp,
   CreditCard,
   LayoutGrid,
   LogOut,
@@ -22,6 +21,7 @@ import {
 } from "@/client/navigation/items";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
+import { DataforseoBalance } from "@/client/features/dataforseo-balance/DataforseoBalance";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { closeDropdown } from "@/client/lib/dropdown";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
@@ -132,11 +132,7 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
           onClick={onNavigate}
           className="flex items-center gap-2.5 text-base-content"
         >
-          <img
-            src="/transparent-logo.png"
-            alt=""
-            className="size-8 rounded-lg"
-          />
+          <img src="/seoforge-mark.svg" alt="" className="size-8" />
           <span className="flex flex-col leading-none">
             <span className="text-lg font-semibold tracking-tight">
               {BRAND_OWNER}
@@ -275,12 +271,9 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="shrink-0 border-t border-base-300 px-2 py-2 pb-safe">
-      <SidebarNavLink
-        icon={CircleHelp}
-        label="Help & Community"
-        onNavigate={onNavigate}
-        linkProps={{ to: "/support" }}
-      />
+      {/* SEO Forge: the operator's DataForSEO balance replaces upstream's
+          Help & Community link (docs/seoforge/PLAN.md). */}
+      <DataforseoBalance />
 
       {email ? (
         <div className="dropdown dropdown-top w-full">

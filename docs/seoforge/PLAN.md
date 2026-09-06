@@ -231,6 +231,12 @@ Paths are relative to the repo root.
 - Theme: `src/client/styles/seoforge-theme.css` overrides upstream's daisyUI tokens for both themes with the Sinfa palette; loaded after `app.css` from `__root.tsx`.
 - Caching: research and videos results are kept indefinitely (single-operator deployment). Every result shows its fetch date and offers a Refresh button; server functions and MCP tools take `refresh: true` to re-buy and overwrite. Per-video and per-channel snapshots keep their 24 hour and 7 day TTLs so a refresh picks up new views.
 
+### Decided on 2026-09-06 (sidebar balance, secrets, marks)
+
+- The sidebar footer's "Help & Community" link is replaced by the operator's DataForSEO balance (`src/client/features/dataforseo-balance/`, server function `getDataforseoBalance` over upstream's free `fetchUserData`). Hidden in hosted mode. It is read once and re-read after each YouTube research or videos job completes (`invalidateDataforseoBalance`), plus a manual refresh button; upstream's own paid features do not trigger it because that would need edits in their hooks.
+- Secrets: `.env` in the repo root is a symlink to `~/.secrets/.env` (gitignored). The Cloudflare Vite plugin loads `.env` and `.env.local` as Worker vars, so `OPENROUTER_API_KEY` (SAM) and any future key reach both the Worker and the Durable Objects without copying. `.env.local` keeps `AUTH_MODE`, the DataForSEO key, and the Data API key and takes precedence.
+- Two marks: `public/seoforge-logo.svg` (hammer on the green rounded square) renders the favicons and app icons; `public/seoforge-mark.svg` (green hammer, transparent) is used next to the brand text and renders `transparent-logo.png`, matching Sinfa Audio Stream's in-app mark.
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
@@ -365,6 +371,12 @@ knip.jsonc                                      EDIT add the two drizzle youtube
 package.json                                    EDIT add db:youtube:* scripts; chain into deploy scripts
 docker-entrypoint.sh                            EDIT run db:youtube:migrate:local after db:migrate:local
 .prettierignore                                 EDIT ignore drizzle-youtube/ and drizzle-pg-youtube/
+
+Sidebar balance (2026-09-06, user request):
+src/server/features/dataforseo-balance/DataforseoBalanceService.ts NEW  balance via upstream's free fetchUserData
+src/serverFunctions/dataforseoBalance.ts        NEW  getDataforseoBalance (self-hosted modes only)
+src/client/features/dataforseo-balance/{DataforseoBalance.tsx,useDataforseoBalance.ts} NEW  sidebar row + invalidation helper
+public/seoforge-mark.svg                        NEW  transparent green hammer used next to the brand text
 
 Brand theme (2026-09-06, user request):
 src/client/styles/seoforge-theme.css              NEW  daisyUI token overrides for "openseo" and "openseo-dark": Sinfa warm neutrals + Calm Green accent
@@ -867,28 +879,28 @@ Every upstream file we have modified.
 Keep the line counts honest.
 Target: fewer than fifteen files, each under ten changed lines.
 
-| File                                               | Why                                                            | Lines  | Phase      | Status  |
-| -------------------------------------------------- | -------------------------------------------------------------- | ------ | ---------- | ------- |
-| `src/server/lib/dataforseo/client.ts`              | register youtube and trends fetchers in the metered client     | +14    | 1.4        | done    |
-| `src/server/mcp/server.ts`                         | import and register four tools; brand name and title           | +10, 4 | 3.2, 0.6   | done    |
-| `src/client/navigation/items.ts`                   | nav entry                                                      |        | 4.2        | planned |
-| `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                             |        | 4.4        | planned |
-| `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                           |        | 5.2        | planned |
-| `src/server/features/sam/samSkills.test.ts`        | "youtube-research" in the expected public skill list           | +2     | 5.3        | done    |
-| `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                           | +3     | 1.6        | done    |
-| `.env.example`                                     | document the key                                               | +6     | 1.6        | done    |
-| `knip.jsonc`                                       | drizzle youtube configs as entries                             | +3     | 1.8        | done    |
-| `package.json`                                     | db:youtube scripts                                             | +4     | 1.8        | done    |
-| `docker-entrypoint.sh`                             | run the youtube migration                                      | +2     | 1.8        | done    |
-| `.prettierignore`                                  | ignore generated youtube migration metadata                    | +3     | 1.8        | done    |
-| `src/routes/__root.tsx`                            | brand title; import of `seoforge-theme.css`                    | 2, +3  | 0.6, brand | done    |
-| `src/client/layout/AppShellParts.tsx`              | brand strings                                                  | 3      | 0.6        | done    |
-| `src/client/features/auth/AuthPage.tsx`            | brand alt text                                                 | 2      | 0.6        | done    |
-| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                     | 5      | 0.6        | done    |
-| `public/site.webmanifest`                          | brand name; theme and background colours                       | 4      | 0.6, brand | done    |
-| `src/client/components/Sidebar.tsx`                | two-line brand mark with logo                                  | 12     | 0.6, brand | done    |
-| `src/client/layout/AppShell.tsx`                   | two-line brand mark with logo (mobile header)                  | 12     | 0.6, brand | done    |
-| `public/*.png`, `public/favicon.ico`               | SEO Forge logo assets rendered from `public/seoforge-logo.svg` | binary | brand      | done    |
+| File                                               | Why                                                                                  | Lines  | Phase      | Status  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------ | ------ | ---------- | ------- |
+| `src/server/lib/dataforseo/client.ts`              | register youtube and trends fetchers in the metered client                           | +14    | 1.4        | done    |
+| `src/server/mcp/server.ts`                         | import and register four tools; brand name and title                                 | +10, 4 | 3.2, 0.6   | done    |
+| `src/client/navigation/items.ts`                   | nav entry                                                                            |        | 4.2        | planned |
+| `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                                                   |        | 4.4        | planned |
+| `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                                                 |        | 5.2        | planned |
+| `src/server/features/sam/samSkills.test.ts`        | "youtube-research" in the expected public skill list                                 | +2     | 5.3        | done    |
+| `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                                                 | +3     | 1.6        | done    |
+| `.env.example`                                     | document the key                                                                     | +6     | 1.6        | done    |
+| `knip.jsonc`                                       | drizzle youtube configs as entries                                                   | +3     | 1.8        | done    |
+| `package.json`                                     | db:youtube scripts                                                                   | +4     | 1.8        | done    |
+| `docker-entrypoint.sh`                             | run the youtube migration                                                            | +2     | 1.8        | done    |
+| `.prettierignore`                                  | ignore generated youtube migration metadata                                          | +3     | 1.8        | done    |
+| `src/routes/__root.tsx`                            | brand title; import of `seoforge-theme.css`                                          | 2, +3  | 0.6, brand | done    |
+| `src/client/layout/AppShellParts.tsx`              | brand strings                                                                        | 3      | 0.6        | done    |
+| `src/client/features/auth/AuthPage.tsx`            | brand alt text                                                                       | 2      | 0.6        | done    |
+| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                                           | 5      | 0.6        | done    |
+| `public/site.webmanifest`                          | brand name; theme and background colours                                             | 4      | 0.6, brand | done    |
+| `src/client/components/Sidebar.tsx`                | two-line brand mark with logo; DataForSEO balance replaces the Help & Community link | 12     | 0.6, brand | done    |
+| `src/client/layout/AppShell.tsx`                   | two-line brand mark with logo (mobile header)                                        | 12     | 0.6, brand | done    |
+| `public/*.png`, `public/favicon.ico`               | SEO Forge logo assets rendered from `public/seoforge-logo.svg`                       | binary | brand      | done    |
 
 ## 9. Status
 

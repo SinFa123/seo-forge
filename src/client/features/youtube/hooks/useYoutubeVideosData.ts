@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { invalidateDataforseoBalance } from "@/client/features/dataforseo-balance/useDataforseoBalance";
 import { getYoutubeVideos } from "@/serverFunctions/youtube";
 
 const YOUTUBE_VIDEOS_STALE_TIME_MS = 6 * 60 * 60 * 1000;
@@ -42,6 +43,7 @@ export function useYoutubeVideosData(request: {
     mutationFn: () => getYoutubeVideos({ data: { ...data, refresh: true } }),
     onSuccess: (result) => {
       queryClient.setQueryData(queryKey, result);
+      invalidateDataforseoBalance(queryClient);
     },
   });
 

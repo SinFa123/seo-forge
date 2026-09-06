@@ -182,7 +182,7 @@ function MobileTopBar({
         <Menu className="h-5 w-5" />
       </button>
       <Link to="/" className="ml-1 flex items-center gap-2 text-base-content">
-        <img src="/transparent-logo.png" alt="" className="size-6 rounded-md" />
+        <img src="/seoforge-mark.svg" alt="" className="size-6" />
         <span className="flex flex-col leading-none">
           <span className="text-base font-semibold tracking-tight">
             {BRAND_OWNER}

@@ -5,6 +5,7 @@ import {
   getStandardErrorMessage,
 } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { invalidateDataforseoBalance } from "@/client/features/dataforseo-balance/useDataforseoBalance";
 import { researchYoutubeKeywords } from "@/serverFunctions/youtube";
 
 // SEO Forge: paid research query. The URL drives it (see youtubeRouteState);
@@ -63,11 +64,13 @@ export function useYoutubeResearchData(
       volume_confidence: query.data.seed.volumeConfidence,
     });
     onComplete(request);
+    invalidateDataforseoBalance(queryClient);
   }, [
     hasSearched,
     onComplete,
     query.data,
     query.isSuccess,
+    queryClient,
     queryKeyString,
     request,
   ]);
@@ -79,6 +82,7 @@ export function useYoutubeResearchData(
       researchYoutubeKeywords({ data: { ...request, refresh: true } }),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKey, data);
+      invalidateDataforseoBalance(queryClient);
     },
   });
 
