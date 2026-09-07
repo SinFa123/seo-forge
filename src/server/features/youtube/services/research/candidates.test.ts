@@ -7,9 +7,10 @@ vi.mock("@/server/lib/youtubeAutocompleteClient", () => ({
 import { fetchYoutubeSuggestions } from "@/server/lib/youtubeAutocompleteClient";
 import {
   containsSeed,
+  contextWords,
   generateCandidates,
+  isOnTopic,
   isUsableCandidate,
-  sharesTopic,
 } from "./candidates";
 
 const market = { locationCode: 2840, languageCode: "en" };
@@ -31,13 +32,22 @@ describe("generateCandidates", () => {
       seed: " Bake  Bread ",
       ...market,
       trendsRelated: {
-        top: ["sourdough bread", "sarah baker"],
+        top: ["sourdough bread", "banana muffins", "bread"],
         rising: ["bake bread at home"],
       },
-      seedVideoTags: [
-        ["Sourdough", "bread recipe", "kitchen"],
-        ["sourdough", "bread recipe", "youtube"],
-        ["Dutch oven", "bread recipe"],
+      seedVideos: [
+        {
+          title: "Easy sourdough loaf",
+          tags: ["Sourdough", "bread recipe", "kitchen"],
+        },
+        {
+          title: "Sourdough for beginners",
+          tags: ["sourdough", "bread recipe", "youtube"],
+        },
+        {
+          title: "Dutch oven bread",
+          tags: ["Dutch oven", "bread recipe", "bread"],
+        },
       ],
     });
 
@@ -52,8 +62,9 @@ describe("generateCandidates", () => {
       { keyword: "bake bread airfryer", kind: "matching", source: "suggest" },
     ]);
     expect(result.tagCandidateCount).toBe(2);
-    // "sarah baker" (Trends) and "bake beans" (fuzzy suggestion) were dropped.
-    expect(result.droppedOffTopicCount).toBe(2);
+    // Dropped: "banana muffins" (Trends, shares nothing), "bread" (Trends, a
+    // seed fragment), "bake beans" (fuzzy suggestion).
+    expect(result.droppedOffTopicCount).toBe(3);
     // seed + 9 question prefixes + 26 letters
     expect(result.suggestCalls).toBe(36);
     expect(fetchYoutubeSuggestions).toHaveBeenCalledTimes(36);
@@ -81,13 +92,28 @@ describe("generateCandidates", () => {
 });
 
 describe("relevance rules", () => {
-  it("containsSeed needs every seed word; sharesTopic needs one non-stopword", () => {
+  it("containsSeed needs every seed word, stemmed", () => {
     expect(containsSeed("Sarah Tang interview", "sarah tang")).toBe(true);
     expect(containsSeed("sarah baker", "sarah tang")).toBe(false);
-    expect(sharesTopic("tang dynasty", "sarah tang")).toBe(true);
-    expect(sharesTopic("how to bake", "bake bread")).toBe(true);
-    expect(sharesTopic("how to", "bake bread")).toBe(false);
-    expect(sharesTopic("bread recipes", "bread recipe")).toBe(true);
+    expect(containsSeed("bread recipes", "bread recipe")).toBe(true);
+  });
+
+  it("a shared word counts only when it recurs across the ranking videos and is not a seed word", () => {
+    const context = contextWords("sarah tang", [
+      {
+        title: "Sarah Tang: my Prague apartment tour",
+        tags: ["prague", "sarah tang"],
+      },
+      {
+        title: "Moving to Prague | Sarah Tang",
+        tags: ["czech republic", "travel"],
+      },
+      { title: "House Hunters International: Sarah Eggar", tags: ["hgtv"] },
+    ]);
+    expect([...context]).toEqual(["prague"]);
+    expect(isOnTopic("prague travel guide", "sarah tang", context)).toBe(true);
+    expect(isOnTopic("sarah eggar hgtv", "sarah tang", context)).toBe(false);
+    expect(isOnTopic("sarah tang vlog", "sarah tang", context)).toBe(true);
   });
 });
 

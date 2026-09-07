@@ -46,8 +46,9 @@ import {
 
 // Bump when the cached result shape changes (formula changes bump
 // YOUTUBE_SCORING.ESTIMATOR_VERSION instead).
-// v2: related candidates come from ranking-video tags; fuzzy suggestions dropped.
-const CACHE_VERSION = 2;
+// v3: related candidates come from ranking-video tags; a shared word counts only
+// when it recurs across the ranking videos, never when it is a seed word.
+const CACHE_VERSION = 3;
 
 /** Results the seed SERP fetches; video info is bought for each of them. */
 const SEED_SERP_DEPTH = 20;
@@ -119,7 +120,10 @@ async function fetchSeedVideoRows(
     rows: items.map((item, index) =>
       buildVideoRow(index + 1, item, infos[index]?.info ?? null, now),
     ),
-    tags: infos.map((result) => result.info?.tags ?? []),
+    seedVideos: items.map((item, index) => ({
+      title: item.title ?? "",
+      tags: infos[index]?.info?.tags ?? [],
+    })),
   };
 }
 
@@ -217,7 +221,7 @@ export async function research(
     ...market,
     trendsRelated,
     suggestions,
-    seedVideoTags: seedVideoResult.tags,
+    seedVideos: seedVideoResult.seedVideos,
   });
   calls.suggest += candidateResult.suggestCalls;
   const candidates = candidateResult.candidates;

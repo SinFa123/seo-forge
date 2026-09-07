@@ -17,9 +17,11 @@ import { YOUTUBE_FETCH_CONCURRENCY, mapWithConcurrency } from "./helpers";
 //   and those fuzzy results were the off-topic "related" rows.
 // - Tags of the videos ranking for the seed (from video info): the uploaders'
 //   own keywords, kept when at least two ranking videos share the tag or the
-//   tag shares a word with the seed. These are the "related" rows.
-// - Google Trends related queries for the seed: kept when they share a word
-//   with the seed or match a ranking video's tag.
+//   tag contains the whole seed. These are the "related" rows.
+// - Google Trends related queries for the seed: kept when they contain the
+//   seed or share a "context word", a word that recurs across the ranking
+//   videos' titles and tags. Sharing a seed word alone is not enough: for a
+//   name seed that is how other people with the same first name got in.
 // Output is de-duplicated, normalised, classified and capped BEFORE any paid
 // hydration so the cap bounds spend.
 
@@ -101,8 +103,14 @@ const GENERIC_TAGS = new Set([
   "4k",
 ]);
 
-/** Tags must appear on this many ranking videos unless they share a seed word. */
+/** Tags must appear on this many ranking videos unless they contain the seed. */
 const MIN_TAG_VIDEOS = 2;
+
+/**
+ * A trailing "?" would fail the Google Ads charset and confuse the word
+ * checks; the first word still classifies the phrase as a question.
+ */
+const clean = (keyword: string) => keyword.replace(/\?+$/, "");
 
 type YoutubeCandidateSource =
   | "suggest"
@@ -137,11 +145,52 @@ export function containsSeed(candidate: string, seed: string): boolean {
     .every((token) => candidateTokens.has(token));
 }
 
-/** At least one topic word is shared, so the candidate is about the seed. */
-export function sharesTopic(candidate: string, seed: string): boolean {
+/** Every candidate word is a seed word: a fragment of the seed, not a keyword. */
+function isSeedFragment(candidate: string, seed: string): boolean {
+  const seedTokens = new Set(tokens(seed).map(stem));
+  const candidateTokens = tokens(candidate).map(stem);
+  return (
+    candidateTokens.length > 0 &&
+    candidateTokens.every((token) => seedTokens.has(token))
+  );
+}
+
+/**
+ * Words that recur across the ranking videos (titles and tags on at least two
+ * videos), minus stopwords and the seed's own words. They describe what the
+ * seed is about ("prague", "travel" for a vlogger; "sourdough", "recipe" for
+ * "bake bread"), so sharing one marks a candidate as on-topic.
+ */
+export function contextWords(
+  seed: string,
+  seedVideos: readonly { title: string; tags: readonly string[] }[],
+): Set<string> {
   const seedTopic = topicTokens(seed);
-  if (seedTopic.size === 0) return containsSeed(candidate, seed);
-  return [...topicTokens(candidate)].some((token) => seedTopic.has(token));
+  const videosPerWord = new Map<string, number>();
+  for (const video of seedVideos) {
+    const words = new Set(
+      [video.title, ...video.tags].flatMap((text) => [...topicTokens(text)]),
+    );
+    for (const word of words) {
+      if (seedTopic.has(word)) continue;
+      videosPerWord.set(word, (videosPerWord.get(word) ?? 0) + 1);
+    }
+  }
+  return new Set(
+    [...videosPerWord.entries()]
+      .filter(([, count]) => count >= MIN_TAG_VIDEOS)
+      .map(([word]) => word),
+  );
+}
+
+/** The candidate contains the seed or shares a context word with its videos. */
+export function isOnTopic(
+  candidate: string,
+  seed: string,
+  context: ReadonlySet<string>,
+): boolean {
+  if (containsSeed(candidate, seed)) return true;
+  return [...topicTokens(candidate)].some((token) => context.has(token));
 }
 
 type YoutubeCandidate = {
@@ -202,8 +251,8 @@ type GenerateCandidatesInput = {
   limit?: number;
   /** Pre-fetched suggest results; fetched here when omitted. */
   suggestions?: SuggestionLists;
-  /** Uploader tags of each video ranking for the seed. */
-  seedVideoTags?: readonly (readonly string[])[];
+  /** Title and uploader tags of each video ranking for the seed. */
+  seedVideos?: readonly { title: string; tags: readonly string[] }[];
 };
 
 type GenerateCandidatesResult = {
@@ -218,22 +267,23 @@ type GenerateCandidatesResult = {
 
 /**
  * Tags shared by the ranking videos, most shared first. A tag on a single
- * video only counts when it shares a word with the seed.
+ * video only counts when it contains the whole seed, and tags that are just
+ * pieces of the seed ("sarah", "tang") are never keywords.
  */
 function rankTags(
   seed: string,
-  seedVideoTags: readonly (readonly string[])[],
+  seedVideos: readonly { title: string; tags: readonly string[] }[],
 ): string[] {
   const videosPerTag = new Map<string, number>();
-  for (const videoTags of seedVideoTags) {
-    for (const tag of new Set(videoTags.map(normalizeYoutubeKeyword))) {
-      if (!tag || GENERIC_TAGS.has(tag)) continue;
+  for (const video of seedVideos) {
+    for (const tag of new Set(video.tags.map(normalizeYoutubeKeyword))) {
+      if (!tag || GENERIC_TAGS.has(tag) || isSeedFragment(tag, seed)) continue;
       videosPerTag.set(tag, (videosPerTag.get(tag) ?? 0) + 1);
     }
   }
   return sortBy(
     [...videosPerTag.entries()].filter(
-      ([tag, count]) => count >= MIN_TAG_VIDEOS || sharesTopic(tag, seed),
+      ([tag, count]) => count >= MIN_TAG_VIDEOS || containsSeed(tag, seed),
     ),
     [([, count]) => count, "desc"],
   ).map(([tag]) => tag);
@@ -259,17 +309,16 @@ export async function generateCandidates(
     0,
   );
 
-  const tagCandidates = rankTags(seed, input.seedVideoTags ?? []);
-  const tagSet = new Set(tagCandidates);
+  const seedVideos = input.seedVideos ?? [];
+  const tagCandidates = rankTags(seed, seedVideos);
+  const context = contextWords(seed, seedVideos);
   let droppedOffTopicCount = 0;
-  // A trailing "?" would fail the Google Ads charset and confuse the word
-  // checks; the first word still classifies the phrase as a question.
-  const clean = (keyword: string) => keyword.replace(/\?+$/, "");
   const suggestEntries = (list: string[]) =>
     list.map(clean).flatMap((keyword) => {
+      if (normalizeYoutubeKeyword(keyword) === seed) return [];
       // Suggestions that lost a seed word are YouTube's fuzzy completions of a
       // prefix it could not extend; they are about something else.
-      if (!containsSeed(keyword, seed)) {
+      if (isSeedFragment(keyword, seed) || !containsSeed(keyword, seed)) {
         droppedOffTopicCount += 1;
         return [];
       }
@@ -277,10 +326,8 @@ export async function generateCandidates(
     });
   const trendsEntries = (list: string[], source: YoutubeCandidateSource) =>
     list.map(clean).flatMap((keyword) => {
-      if (
-        !sharesTopic(keyword, seed) &&
-        !tagSet.has(normalizeYoutubeKeyword(keyword))
-      ) {
+      if (normalizeYoutubeKeyword(keyword) === seed) return [];
+      if (isSeedFragment(keyword, seed) || !isOnTopic(keyword, seed, context)) {
         droppedOffTopicCount += 1;
         return [];
       }

@@ -554,11 +554,11 @@ Split on whitespace after trimming.
 Version 2 (2026-09-07). Three sources, each held to a relevance rule after "sarah tang" produced a list of other Sarahs:
 
 - YouTube suggest (seed, question prefix + seed, seed + a to z): a suggestion is kept only when it still contains every seed word (stemmed). YouTube autocompletes a prefix it cannot extend by dropping words ("sarah tang b" becomes "sarah b..."), and those fuzzy completions were the off-topic rows.
-- Tags of the videos ranking for the seed (video info `keywords`): kept when at least two ranking videos share the tag, or the tag shares a non-stopword word with the seed; platform tags ("video", "shorts", "viral") are ignored. These are the related rows, ordered by how many ranking videos carry them.
-- Google Trends related queries (top, then rising) for the seed: kept when they share a non-stopword word with the seed or equal a ranking-video tag.
+- Tags of the videos ranking for the seed (video info `keywords`): kept when at least two ranking videos share the tag, or the tag contains the whole seed; platform tags ("video", "shorts", "viral") and fragments of the seed ("sarah", "tang") are ignored. These are the related rows, ordered by how many ranking videos carry them.
+- Google Trends related queries (top, then rising) for the seed: kept when they contain the seed or share a context word, a non-stopword word that recurs across at least two ranking videos' titles and tags and is not itself a seed word. Sharing only a seed word is not enough; on "sarah tang" that rule alone let "sarah pan" and "sarah eggar hgtv" through.
 
 Order before the cap: seed suggestions, tags, Trends, prefix and letter suggestions.
-`diagnostics.tagCandidateCount` and `diagnostics.droppedOffTopicCount` report the effect; `CACHE_VERSION` 2 recomputes results cached under the old rules.
+`diagnostics.tagCandidateCount` and `diagnostics.droppedOffTopicCount` report the effect; `CACHE_VERSION` 3 recomputes results cached under the old rules.
 
 Classification (unchanged):
 

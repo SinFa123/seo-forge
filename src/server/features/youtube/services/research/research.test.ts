@@ -70,7 +70,7 @@ function mockClient() {
       views_count: 100_000,
       timestamp: "2026-08-06 12:00:00 +00:00",
       channel_subscribers_count: { count: 20_000 },
-      keywords: ["bread recipe", `tag-${videoId}`],
+      keywords: ["bread recipe", "sourdough", `tag-${videoId}`],
     }),
   );
   const explore = vi.fn<DataforseoClient["trends"]["explore"]>(
@@ -135,6 +135,7 @@ describe("youtube research", () => {
       "how to bake bread",
       "bake bread at home",
       "bread recipe",
+      "sourdough",
       "sourdough bread",
     ]);
 
@@ -159,6 +160,7 @@ describe("youtube research", () => {
       "bake bread at home",
       "how to bake bread",
       "bread recipe",
+      "sourdough",
     ]);
     expect(result.rows[0]).toMatchObject({
       kind: "related",
