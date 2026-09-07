@@ -70,6 +70,7 @@ function mockClient() {
       views_count: 100_000,
       timestamp: "2026-08-06 12:00:00 +00:00",
       channel_subscribers_count: { count: 20_000 },
+      keywords: ["bread recipe", `tag-${videoId}`],
     }),
   );
   const explore = vi.fn<DataforseoClient["trends"]["explore"]>(
@@ -133,6 +134,7 @@ describe("youtube research", () => {
       "bake bread",
       "how to bake bread",
       "bake bread at home",
+      "bread recipe",
       "sourdough bread",
     ]);
 
@@ -156,6 +158,7 @@ describe("youtube research", () => {
       "sourdough bread",
       "bake bread at home",
       "how to bake bread",
+      "bread recipe",
     ]);
     expect(result.rows[0]).toMatchObject({
       kind: "related",
@@ -164,6 +167,7 @@ describe("youtube research", () => {
     });
     expect(result.rows[0]?.competition).not.toBeNull();
     expect(result.rows[1]).toMatchObject({ kind: "matching" });
+    // "bread recipe" is a tag on both ranking videos: related, unanchored here.
     expect(result.rows[2]).toEqual({
       keyword: "how to bake bread",
       kind: "question",
@@ -172,6 +176,12 @@ describe("youtube research", () => {
       competition: null,
       overallScore: null,
       wordCount: 4,
+    });
+    // "bread recipe" is a tag on both ranking videos: related, unanchored here.
+    expect(result.rows[3]).toMatchObject({
+      keyword: "bread recipe",
+      kind: "related",
+      searchVolume: null,
     });
 
     expect(mocks.setCached).toHaveBeenCalledWith(
@@ -200,6 +210,8 @@ describe("youtube research", () => {
         candidateCount: 0,
         suggestionCount: 0,
         trendsRelatedCount: 0,
+        tagCandidateCount: 0,
+        droppedOffTopicCount: 0,
         anchoredCount: 0,
         serpRowCount: 0,
         seedInterest: null,

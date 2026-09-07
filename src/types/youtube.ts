@@ -33,6 +33,10 @@ export type YoutubeResearchDiagnostics = {
   candidateCount: number;
   suggestionCount: number;
   trendsRelatedCount: number;
+  /** Ranking-video tags that became candidates. */
+  tagCandidateCount: number;
+  /** Suggestions and Trends queries dropped as off-topic. */
+  droppedOffTopicCount: number;
   /** Candidates (plus seed) for which Google Ads returned a volume. */
   anchoredCount: number;
   /** Candidate rows that received their own SERP for competition. */

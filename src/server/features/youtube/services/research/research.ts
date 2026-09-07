@@ -46,7 +46,8 @@ import {
 
 // Bump when the cached result shape changes (formula changes bump
 // YOUTUBE_SCORING.ESTIMATOR_VERSION instead).
-const CACHE_VERSION = 1;
+// v2: related candidates come from ranking-video tags; fuzzy suggestions dropped.
+const CACHE_VERSION = 2;
 
 /** Results the seed SERP fetches; video info is bought for each of them. */
 const SEED_SERP_DEPTH = 20;
@@ -62,6 +63,8 @@ const cachedResultSchema = z.object({
     candidateCount: z.number().int(),
     suggestionCount: z.number().int(),
     trendsRelatedCount: z.number().int(),
+    tagCandidateCount: z.number().int(),
+    droppedOffTopicCount: z.number().int(),
     anchoredCount: z.number().int(),
     serpRowCount: z.number().int(),
     seedInterest: z.number().nullable(),
@@ -112,9 +115,12 @@ async function fetchSeedVideoRows(
   );
   calls.videoInfo += infos.filter((result) => result.fetched).length;
 
-  return items.map((item, index) =>
-    buildVideoRow(index + 1, item, infos[index]?.info ?? null, now),
-  );
+  return {
+    rows: items.map((item, index) =>
+      buildVideoRow(index + 1, item, infos[index]?.info ?? null, now),
+    ),
+    tags: infos.map((result) => result.info?.tags ?? []),
+  };
 }
 
 async function fetchRowCompetition(
@@ -178,10 +184,9 @@ export async function research(
     suggest: 0,
   };
 
-  // Two independent chains run side by side. A live YouTube SERP takes about
-  // 14 s at DataForSEO, so the seed chain (SERP, then video info) and the row
-  // chain (Trends + suggest, Google Ads anchors, then one SERP per row) must
-  // overlap or the run takes twice as long.
+  // The seed chain (SERP, then video info) runs beside the free Trends and
+  // suggest calls; candidates need the ranking videos' tags, so they wait for
+  // both before the Google Ads anchors and the per-row SERPs.
   const startedAt = Date.now();
   const timings = {
     seedVideos: 0,
@@ -190,24 +195,16 @@ export async function research(
     rowSerps: 0,
     total: 0,
   };
-  const seedVideosPromise = fetchSeedVideoRows(
-    client,
-    seed,
-    market,
-    now,
-    calls,
-  ).then((rows) => {
-    timings.seedVideos = elapsed(startedAt);
-    return rows;
-  });
-
-  // One single-keyword Trends request returns both the seed's interest graph
-  // (confidence signal) and its related queries (candidates).
-  const [seedTrends, suggestions] = await Promise.all([
+  const [seedVideoResult, seedTrends, suggestions] = await Promise.all([
+    fetchSeedVideoRows(client, seed, market, now, calls).then((result) => {
+      timings.seedVideos = elapsed(startedAt);
+      return result;
+    }),
     client.trends.explore({ keywords: [seed], ...market, type: "youtube" }),
     fetchSuggestionLists({ seed, ...market }),
   ]);
   calls.trends += 1;
+  const seedVideos = seedVideoResult.rows;
   const seedInterest = meanRecentInterest(seedTrends.graph, seed);
   const trendsSignal = hasTrendsSignal(seedInterest);
   const trendsRelated = {
@@ -220,6 +217,7 @@ export async function research(
     ...market,
     trendsRelated,
     suggestions,
+    seedVideoTags: seedVideoResult.tags,
   });
   calls.suggest += candidateResult.suggestCalls;
   const candidates = candidateResult.candidates;
@@ -245,10 +243,13 @@ export async function research(
     .map((candidate) => candidate.keyword);
 
   const rowSerpsStartedAt = Date.now();
-  const [competitionByKeyword, seedVideos] = await Promise.all([
-    fetchRowCompetition(client, serpKeywords, market, now, calls),
-    seedVideosPromise,
-  ]);
+  const competitionByKeyword = await fetchRowCompetition(
+    client,
+    serpKeywords,
+    market,
+    now,
+    calls,
+  );
   timings.rowSerps = elapsed(rowSerpsStartedAt);
 
   const seedVolume = estimateSearchVolume({
@@ -298,6 +299,8 @@ export async function research(
       suggestionCount: candidateResult.suggestionCount,
       trendsRelatedCount:
         trendsRelated.top.length + trendsRelated.rising.length,
+      tagCandidateCount: candidateResult.tagCandidateCount,
+      droppedOffTopicCount: candidateResult.droppedOffTopicCount,
       anchoredCount: [...anchors.values()].filter((value) => value != null)
         .length,
       serpRowCount: serpKeywords.length,

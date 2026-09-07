@@ -549,12 +549,26 @@ Null when volume is null.
 
 Split on whitespace after trimming.
 
-### Candidate classification
+### Candidate generation and classification
+
+Version 2 (2026-09-07). Three sources, each held to a relevance rule after "sarah tang" produced a list of other Sarahs:
+
+- YouTube suggest (seed, question prefix + seed, seed + a to z): a suggestion is kept only when it still contains every seed word (stemmed). YouTube autocompletes a prefix it cannot extend by dropping words ("sarah tang b" becomes "sarah b..."), and those fuzzy completions were the off-topic rows.
+- Tags of the videos ranking for the seed (video info `keywords`): kept when at least two ranking videos share the tag, or the tag shares a non-stopword word with the seed; platform tags ("video", "shorts", "viral") are ignored. These are the related rows, ordered by how many ranking videos carry them.
+- Google Trends related queries (top, then rising) for the seed: kept when they share a non-stopword word with the seed or equal a ranking-video tag.
+
+Order before the cap: seed suggestions, tags, Trends, prefix and letter suggestions.
+`diagnostics.tagCandidateCount` and `diagnostics.droppedOffTopicCount` report the effect; `CACHE_VERSION` 2 recomputes results cached under the old rules.
+
+Classification (unchanged):
 
 - `matching`: contains every word of the seed.
 - `question`: begins with a question word (`how`, `what`, `why`, `when`, `where`, `who`, `which`, `can`, `does`, `is`, `should`) or ends with `?`.
   Question takes precedence over matching.
 - `related`: everything else.
+
+Version 1 (superseded) accepted every suggestion and every Trends query, so a name seed collected unrelated people who merely shared a first name.
+Because candidates now need the ranking videos' tags, the row chain waits for the seed chain (about 10 s) instead of only Trends (about 7 s); a default run is about 26 s.
 
 ## 6. Phases and steps
 

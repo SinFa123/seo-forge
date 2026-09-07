@@ -69,6 +69,8 @@ export function getYoutubeResearchFixture(
       candidateCount: rows.length,
       suggestionCount: 120,
       trendsRelatedCount: 12,
+      tagCandidateCount: 9,
+      droppedOffTopicCount: 30,
       anchoredCount: rows.length - 1,
       serpRowCount: scoredRows,
       seedInterest: 10.9,

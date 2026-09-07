@@ -39,6 +39,8 @@ const videoInfoSnapshotSchema = z.object({
   durationSeconds: z.number().nullable(),
   subscribersCount: z.number().nullable(),
   isLive: z.boolean(),
+  /** The uploader's tags; the strongest "related keyword" signal we have. */
+  tags: z.array(z.string()).default([]),
 });
 
 type VideoInfoSnapshot = z.infer<typeof videoInfoSnapshotSchema>;
@@ -69,6 +71,7 @@ function toVideoInfoSnapshot(
     durationSeconds: item.duration_time_seconds ?? null,
     subscribersCount: item.channel_subscribers_count?.count ?? null,
     isLive: item.is_live ?? false,
+    tags: item.keywords ?? [],
   };
 }
 

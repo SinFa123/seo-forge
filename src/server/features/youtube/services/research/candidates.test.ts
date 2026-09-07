@@ -5,17 +5,25 @@ vi.mock("@/server/lib/youtubeAutocompleteClient", () => ({
 }));
 
 import { fetchYoutubeSuggestions } from "@/server/lib/youtubeAutocompleteClient";
-import { generateCandidates, isUsableCandidate } from "./candidates";
+import {
+  containsSeed,
+  generateCandidates,
+  isUsableCandidate,
+  sharesTopic,
+} from "./candidates";
 
 const market = { locationCode: 2840, languageCode: "en" };
 
 describe("generateCandidates", () => {
-  it("de-duplicates, drops the seed, classifies, and keeps seed suggestions ahead of Trends and expansions", async () => {
+  it("keeps on-topic candidates in source order: seed suggestions, ranking-video tags, Trends, expansions", async () => {
     vi.mocked(fetchYoutubeSuggestions).mockImplementation(async ({ term }) => {
       if (term === "bake bread") return ["Bake Bread", "bake bread at home"];
       if (term === "how to bake bread") return ["how to bake bread?"];
-      if (term === "bake bread a")
+      if (term === "bake bread a") {
         return ["bake bread airfryer", "bake  bread at home"];
+      }
+      // YouTube could not extend "bake bread b" and fell back to another topic.
+      if (term === "bake bread b") return ["bake beans"];
       return [];
     });
 
@@ -23,26 +31,39 @@ describe("generateCandidates", () => {
       seed: " Bake  Bread ",
       ...market,
       trendsRelated: {
-        top: ["sourdough starter"],
+        top: ["sourdough bread", "sarah baker"],
         rising: ["bake bread at home"],
       },
+      seedVideoTags: [
+        ["Sourdough", "bread recipe", "kitchen"],
+        ["sourdough", "bread recipe", "youtube"],
+        ["Dutch oven", "bread recipe"],
+      ],
     });
 
     expect(result.candidates).toEqual([
       { keyword: "bake bread at home", kind: "matching", source: "suggest" },
-      { keyword: "sourdough starter", kind: "related", source: "trends_top" },
+      // Tags: on 3 videos, then 2 videos; "kitchen" and "dutch oven" are on
+      // one video and share no seed word; "youtube" is a platform tag.
+      { keyword: "bread recipe", kind: "related", source: "tag" },
+      { keyword: "sourdough", kind: "related", source: "tag" },
+      { keyword: "sourdough bread", kind: "related", source: "trends_top" },
       { keyword: "how to bake bread", kind: "question", source: "suggest" },
       { keyword: "bake bread airfryer", kind: "matching", source: "suggest" },
     ]);
+    expect(result.tagCandidateCount).toBe(2);
+    // "sarah baker" (Trends) and "bake beans" (fuzzy suggestion) were dropped.
+    expect(result.droppedOffTopicCount).toBe(2);
     // seed + 9 question prefixes + 26 letters
     expect(result.suggestCalls).toBe(36);
     expect(fetchYoutubeSuggestions).toHaveBeenCalledTimes(36);
-    expect(result.suggestionCount).toBe(5);
   });
 
   it("caps candidates before hydration", async () => {
     vi.mocked(fetchYoutubeSuggestions).mockImplementation(async ({ term }) =>
-      term === "bake bread" ? ["one", "two", "three"] : [],
+      term === "bake bread"
+        ? ["bake bread one", "bake bread two", "bake bread three"]
+        : [],
     );
 
     const result = await generateCandidates({
@@ -52,7 +73,21 @@ describe("generateCandidates", () => {
       limit: 2,
     });
 
-    expect(result.candidates.map((c) => c.keyword)).toEqual(["one", "two"]);
+    expect(result.candidates.map((c) => c.keyword)).toEqual([
+      "bake bread one",
+      "bake bread two",
+    ]);
+  });
+});
+
+describe("relevance rules", () => {
+  it("containsSeed needs every seed word; sharesTopic needs one non-stopword", () => {
+    expect(containsSeed("Sarah Tang interview", "sarah tang")).toBe(true);
+    expect(containsSeed("sarah baker", "sarah tang")).toBe(false);
+    expect(sharesTopic("tang dynasty", "sarah tang")).toBe(true);
+    expect(sharesTopic("how to bake", "bake bread")).toBe(true);
+    expect(sharesTopic("how to", "bake bread")).toBe(false);
+    expect(sharesTopic("bread recipes", "bread recipe")).toBe(true);
   });
 });
 
