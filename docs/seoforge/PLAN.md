@@ -282,6 +282,7 @@ Update this tree whenever files are added, renamed, or removed.
 docs/seoforge/
   GOAL.md                                       NEW
   PLAN.md                                       NEW  (this file)
+  TAILSCALE.md                                  NEW  how the dev server runs on the tailnet (port 8450, seo-forge.service) (exists)
 
 src/shared/
   brand.ts                                      NEW  BRAND_NAME and related display constants (exists)
