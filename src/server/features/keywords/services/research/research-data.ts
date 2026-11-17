@@ -115,6 +115,13 @@ export async function fetchGoogleAdsResearchRows(
   );
 }
 
+// related_keywords finds at most ~584 keywords at depth 3 (often far fewer
+// once duplicates collapse) and ~4,680 at depth 4, so only a request for more
+// than 500 rows searches the extra level.
+export function relatedKeywordsDepth(resultLimit: number): number {
+  return resultLimit > 500 ? 4 : 3;
+}
+
 async function fetchRelatedRows(
   params: Omit<FetchResearchRowsParams, "source">,
   dataforseo: ReturnType<typeof createDataforseoClient>,
@@ -124,7 +131,7 @@ async function fetchRelatedRows(
     locationCode: params.locationCode,
     languageCode: params.languageCode,
     limit: params.resultLimit,
-    depth: 3,
+    depth: relatedKeywordsDepth(params.resultLimit),
     includeClickstreamData: params.includeClickstreamData,
     creditFeature: params.creditFeature,
   });

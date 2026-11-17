@@ -16,12 +16,12 @@ import { type EnrichedKeyword, normalizeKeyword } from "./helpers";
 import {
   fetchGoogleAdsResearchRows,
   fetchResearchRowsBySource,
+  relatedKeywordsDepth,
 } from "./research-data";
 import {
   AUTO_KEYWORD_SOURCES,
   MIN_NON_SEED_FOR_AUTO,
   countNonSeedKeywords,
-  hasSufficientCoverage,
   type KeywordMode,
   type KeywordSource,
   type ResearchSource,
@@ -89,11 +89,15 @@ const cachedResultSchema = z.object({
 
 // v3: research volumes are no longer clickstream-refined, and Google-Ads-only
 // locations route to keywords_for_keywords.
-const CACHE_VERSION = 3;
+// v4: auto mode tops up from later sources to the requested row count.
+const CACHE_VERSION = 4;
 
 async function fetchRowsFromSource(
   source: KeywordSource,
-  input: ResolvedResearchKeywordsInput,
+  // resultLimit is widened so auto mode can ask for just the missing rows.
+  input: Omit<ResolvedResearchKeywordsInput, "resultLimit"> & {
+    resultLimit: number;
+  },
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
@@ -123,10 +127,12 @@ async function fetchAutoRows(
   const accumulatedRows: EnrichedKeyword[] = [];
   const seenKeywords = new Set<string>();
 
+  // Each source tops up what the earlier ones left short of the requested row
+  // count, asking only for the rows still missing; later sources are broader.
   for (const source of AUTO_KEYWORD_SOURCES) {
     const rows = await fetchRowsFromSource(
       source,
-      input,
+      { ...input, resultLimit: input.resultLimit - accumulatedRows.length },
       seedKeyword,
       billingCustomer,
       creditFeature,
@@ -146,29 +152,16 @@ async function fetchAutoRows(
 
     lastSource = source;
 
-    if (
-      hasSufficientCoverage(accumulatedRows, seedKeyword, MIN_NON_SEED_FOR_AUTO)
-    ) {
-      return {
-        rows: accumulatedRows,
-        source,
-        usedFallback: source !== AUTO_KEYWORD_SOURCES[0],
-        diagnostics: {
-          requestedMode: "auto",
-          threshold: MIN_NON_SEED_FOR_AUTO,
-          sourceAttempts: attempts,
-        },
-      };
-    }
+    if (accumulatedRows.length >= input.resultLimit) break;
   }
 
   return {
     rows: accumulatedRows,
     source: lastSource,
-    usedFallback: true,
+    usedFallback: lastSource !== AUTO_KEYWORD_SOURCES[0],
     diagnostics: {
       requestedMode: "auto",
-      threshold: MIN_NON_SEED_FOR_AUTO,
+      threshold: input.resultLimit,
       sourceAttempts: attempts,
     },
   };
@@ -256,7 +249,7 @@ async function buildResearchCacheKey(
     languageCode: input.languageCode,
     resultLimit: input.resultLimit,
     mode,
-    depth: 3,
+    depth: relatedKeywordsDepth(input.resultLimit),
     clickstream: input.clickstream,
   });
 }

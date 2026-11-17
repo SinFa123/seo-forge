@@ -2,8 +2,8 @@ import type { KeywordIntent } from "@/types/keywords";
 
 export const MAX_KEYWORDS_PER_SUBMIT = 5;
 
-export type ResultLimit = 150 | 300 | 500;
-export const RESULT_LIMITS: ResultLimit[] = [150, 300, 500];
+export type ResultLimit = 150 | 300 | 500 | 1000;
+export const RESULT_LIMITS: ResultLimit[] = [150, 300, 500, 1000];
 
 export type KeywordSource = "related" | "suggestions" | "ideas";
 export type KeywordMode = "auto" | KeywordSource;

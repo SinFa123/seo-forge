@@ -23,11 +23,3 @@ export function countNonSeedKeywords(
   const normalizedSeed = seedKeyword.trim().toLowerCase();
   return rows.filter((row) => row.keyword !== normalizedSeed).length;
 }
-
-export function hasSufficientCoverage(
-  rows: EnrichedKeyword[],
-  seedKeyword: string,
-  threshold: number = MIN_NON_SEED_FOR_AUTO,
-): boolean {
-  return countNonSeedKeywords(rows, seedKeyword) >= threshold;
-}

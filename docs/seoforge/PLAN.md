@@ -248,6 +248,14 @@ Paths are relative to the repo root.
 - Recent searches on the YouTube tab remember the view, not only the keyword: one entry per keyword, market, and sub-tab (Keywords, Videos, Channels), each showing a view badge, the country, and the date and time; clicking restores that view. Saved is not recorded because it is not a search. Entries written before the view was recorded read as Keywords.
 - Rank Tracking's "Check rankings" (in the tracker's "⋯" menu) is a silent no-op when the tracker has no keywords, while the empty state says to click "Check Now"; this is upstream behaviour (`RankTrackingDomainDetail.tsx`, `if (count > 0) requestCheck(count)`), reproduced on 2026-09-06 with the user's 0-keyword tracker. Not changed; reported to the user with the option of a registered two-line fix.
 
+### Decided on 2026-10-13 (keyword research up to 1000 rows)
+
+- The Keyword Research row-count picker offers 1000 as well as 150, 300 and 500 (UI, URL `kLimit`, saved search tabs, server-function schema). The `research_keywords` MCP tool stays capped at 500, because 1000 rows per seed for up to five seeds would flood an agent's context.
+- 1000 is DataForSEO's hard ceiling for one Labs request (`limit` maximum on related_keywords, keyword_suggestions and keyword_ideas). Going further means paging with `offset`, one extra paid task per 1000 rows.
+- related_keywords is capped by `depth`, not `limit`: up to ~584 keywords at depth 3 and ~4,680 at depth 4, and far fewer after duplicates collapse. Measured for "banana bread" (US): 181 rows at depth 3 and 348 at depth 4. `relatedKeywordsDepth` in `research-data.ts` uses depth 4 only for requests above 500 rows, so 150/300/500 keep upstream's depth 3.
+- The user chose (2026-10-13) that Auto mode fills to the requested count for every row count: Related first, then Suggestions, then Ideas, each asked only for the rows still missing, stopping once full. Upstream stopped after the first source with 5 non-seed keywords, so "banana bread" at 500 returned 181 rows. Measured after the change at 1000: 999 rows, 348 from Related and the rest from Suggestions (652 returned) and Ideas (26 returned), about 0.13 USD; the one-row shortfall is either an overlap or Ideas returning one row fewer than asked. Ideas rows are broader ("brownie recipe"), which is why they come last. `CACHE_VERSION` is 4 so cached upstream-style results are not served.
+- Cloudflare caveat, not a problem for the local deployment: `persistRows` upserts each row with its own D1 query, and D1 allows 1000 queries per Worker invocation on the paid plan (50 on free), so a 1000-row research on Cloudflare would lose some keyword-metric upserts (logged, not shown to the user). Batch the upserts before deploying there.
+
 ### DataForSEO YouTube endpoints (from DataForSEO docs)
 
 - `POST /v3/serp/youtube/organic/live/advanced`.
@@ -389,6 +397,9 @@ knip.jsonc                                      EDIT add the two drizzle youtube
 package.json                                    EDIT add db:youtube:* scripts; chain into deploy scripts
 docker-entrypoint.sh                            EDIT run db:youtube:migrate:local after db:migrate:local
 .prettierignore                                 EDIT ignore drizzle-youtube/ and drizzle-pg-youtube/
+
+Keyword research up to 1000 rows (2026-10-13, user request):
+src/server/features/keywords/services/research/research.test.ts NEW  auto mode tops up later sources with only the missing rows (exists)
 
 Sidebar balance (2026-09-06, user request):
 src/server/features/dataforseo-balance/DataforseoBalanceService.ts NEW  balance via upstream's free fetchUserData
@@ -918,28 +929,35 @@ Every upstream file we have modified.
 Keep the line counts honest.
 Target: fewer than fifteen files, each under ten changed lines.
 
-| File                                               | Why                                                                                  | Lines  | Phase      | Status  |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------ | ------ | ---------- | ------- |
-| `src/server/lib/dataforseo/client.ts`              | register youtube and trends fetchers in the metered client                           | +14    | 1.4        | done    |
-| `src/server/mcp/server.ts`                         | import and register four tools; brand name and title                                 | +10, 4 | 3.2, 0.6   | done    |
-| `src/client/navigation/items.ts`                   | nav entry                                                                            |        | 4.2        | planned |
-| `src/client/features/search-tabs/types.ts`         | YoutubeSearchTabInput in the union                                                   |        | 4.4        | planned |
-| `scripts/sync-plugin-skills.mjs`                   | add youtube-research                                                                 |        | 5.2        | planned |
-| `src/server/features/sam/samSkills.test.ts`        | "youtube-research" in the expected public skill list                                 | +2     | 5.3        | done    |
-| `src/env.d.ts`                                     | YOUTUBE_DATA_API_KEY                                                                 | +3     | 1.6        | done    |
-| `.env.example`                                     | document the key                                                                     | +6     | 1.6        | done    |
-| `knip.jsonc`                                       | drizzle youtube configs as entries                                                   | +3     | 1.8        | done    |
-| `package.json`                                     | db:youtube scripts                                                                   | +4     | 1.8        | done    |
-| `docker-entrypoint.sh`                             | run the youtube migration                                                            | +2     | 1.8        | done    |
-| `.prettierignore`                                  | ignore generated youtube migration metadata                                          | +3     | 1.8        | done    |
-| `src/routes/__root.tsx`                            | brand title; import of `seoforge-theme.css`                                          | 2, +3  | 0.6, brand | done    |
-| `src/client/layout/AppShellParts.tsx`              | brand strings                                                                        | 3      | 0.6        | done    |
-| `src/client/features/auth/AuthPage.tsx`            | brand alt text                                                                       | 2      | 0.6        | done    |
-| `src/client/features/dashboard/McpConnectCard.tsx` | brand copy                                                                           | 5      | 0.6        | done    |
-| `public/site.webmanifest`                          | brand name; theme and background colours                                             | 4      | 0.6, brand | done    |
-| `src/client/components/Sidebar.tsx`                | two-line brand mark with logo; DataForSEO balance replaces the Help & Community link | 12     | 0.6, brand | done    |
-| `src/client/layout/AppShell.tsx`                   | two-line brand mark with logo (mobile header)                                        | 12     | 0.6, brand | done    |
-| `public/*.png`, `public/favicon.ico`               | SEO Forge logo assets rendered from `public/seoforge-logo.svg`                       | binary | brand      | done    |
+| File                                                              | Why                                                                                  | Lines    | Phase      | Status  |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------- | ---------- | ------- |
+| `src/server/lib/dataforseo/client.ts`                             | register youtube and trends fetchers in the metered client                           | +14      | 1.4        | done    |
+| `src/server/mcp/server.ts`                                        | import and register four tools; brand name and title                                 | +10, 4   | 3.2, 0.6   | done    |
+| `src/client/navigation/items.ts`                                  | nav entry                                                                            |          | 4.2        | planned |
+| `src/client/features/search-tabs/types.ts`                        | YoutubeSearchTabInput in the union                                                   |          | 4.4        | planned |
+| `scripts/sync-plugin-skills.mjs`                                  | add youtube-research                                                                 |          | 5.2        | planned |
+| `src/server/features/sam/samSkills.test.ts`                       | "youtube-research" in the expected public skill list                                 | +2       | 5.3        | done    |
+| `src/env.d.ts`                                                    | YOUTUBE_DATA_API_KEY                                                                 | +3       | 1.6        | done    |
+| `.env.example`                                                    | document the key                                                                     | +6       | 1.6        | done    |
+| `knip.jsonc`                                                      | drizzle youtube configs as entries                                                   | +3       | 1.8        | done    |
+| `package.json`                                                    | db:youtube scripts                                                                   | +4       | 1.8        | done    |
+| `docker-entrypoint.sh`                                            | run the youtube migration                                                            | +2       | 1.8        | done    |
+| `.prettierignore`                                                 | ignore generated youtube migration metadata                                          | +3       | 1.8        | done    |
+| `src/routes/__root.tsx`                                           | brand title; import of `seoforge-theme.css`                                          | 2, +3    | 0.6, brand | done    |
+| `src/client/layout/AppShellParts.tsx`                             | brand strings                                                                        | 3        | 0.6        | done    |
+| `src/client/features/auth/AuthPage.tsx`                           | brand alt text                                                                       | 2        | 0.6        | done    |
+| `src/client/features/dashboard/McpConnectCard.tsx`                | brand copy                                                                           | 5        | 0.6        | done    |
+| `public/site.webmanifest`                                         | brand name; theme and background colours                                             | 4        | 0.6, brand | done    |
+| `src/client/components/Sidebar.tsx`                               | two-line brand mark with logo; DataForSEO balance replaces the Help & Community link | 12       | 0.6, brand | done    |
+| `src/client/layout/AppShell.tsx`                                  | two-line brand mark with logo (mobile header)                                        | 12       | 0.6, brand | done    |
+| `public/*.png`, `public/favicon.ico`                              | SEO Forge logo assets rendered from `public/seoforge-logo.svg`                       | binary   | brand      | done    |
+| `src/client/features/keywords/keywordResearchTypes.ts`            | 1000 in `ResultLimit` and `RESULT_LIMITS`                                            | 2        | 1000 rows  | done    |
+| `src/client/features/keywords/keywordSearchParams.ts`             | 1000 in `isResultLimit`                                                              | 1        | 1000 rows  | done    |
+| `src/client/features/search-tabs/useSearchTabs.ts`                | accept persisted tabs with 1000                                                      | +1, 1    | 1000 rows  | done    |
+| `src/types/schemas/keywords.ts`                                   | 1000 in the research input and `kLimit` unions                                       | 4        | 1000 rows  | done    |
+| `src/server/features/keywords/services/research/research-data.ts` | `relatedKeywordsDepth`: depth 4 above 500 rows                                       | +8, 1    | 1000 rows  | done    |
+| `src/server/features/keywords/services/research/research.ts`      | auto mode fills to the requested count; cache key depth; `CACHE_VERSION` 4           | +14, -21 | 1000 rows  | done    |
+| `src/server/features/keywords/services/research/selection.ts`     | remove the now-unused `hasSufficientCoverage`                                        | -8       | 1000 rows  | done    |
 
 ## 9. Status
 
